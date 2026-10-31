@@ -1,5 +1,6 @@
 import { Bookmark, Search } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
+import { useNavigate } from "react-router-dom";
 import type { Recipe, RecipeCategory } from "../../shared/recipe";
 import { recipeCategories, recipeCategoryLabels } from "../../shared/recipe";
 import { recipesApi } from "../features/recipes/recipeApi";
@@ -10,6 +11,7 @@ import { useLocalStorage } from "../lib/localStorage";
 const FAVORITES_KEY = "recipes.savedIds";
 
 export function RecipesPage() {
+  const navigate = useNavigate();
   const [recipes, setRecipes] = useState<Recipe[] | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [query, setQuery] = useState("");
@@ -153,7 +155,7 @@ export function RecipesPage() {
               isFavorite={savedIds.includes(recipe.id)}
               onToggleFavorite={toggleFavorite}
               onOpen={(id) => {
-                window.history.pushState({}, "", `/recipes/${id}`);
+                navigate(`/recipes/${id}`);
               }}
             />
           ))}

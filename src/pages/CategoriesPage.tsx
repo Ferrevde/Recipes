@@ -1,4 +1,4 @@
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { useEffect, useState } from "react";
 import type { Recipe } from "../../shared/recipe";
 import { recipeCategories, recipeCategoryLabels } from "../../shared/recipe";
@@ -7,6 +7,7 @@ import { RecipeCard } from "../features/recipes/RecipeCard";
 import { UtensilsCrossed } from "lucide-react";
 
 export function CategoriesPage() {
+  const navigate = useNavigate();
   const [recipes, setRecipes] = useState<Recipe[] | null>(null);
   const [error, setError] = useState<string | null>(null);
 
@@ -25,7 +26,6 @@ export function CategoriesPage() {
         className="back-link"
         to="/recipes"
         aria-label="Back to all recipes"
-        onClick={(event) => event.preventDefault()}
       >
         Back to all recipes
       </Link>
@@ -69,7 +69,7 @@ export function CategoriesPage() {
                       isFavorite={false}
                       onToggleFavorite={() => {}}
                       onOpen={(id) => {
-                        window.history.pushState({}, "", `/recipes/${id}`);
+                        navigate(`/recipes/${id}`);
                       }}
                     />
                   ))}

@@ -1,5 +1,5 @@
 import { ArrowRight, ChefHat, UtensilsCrossed } from "lucide-react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { useEffect, useState } from "react";
 import type { Recipe } from "../../shared/recipe";
 import { recipesApi } from "../features/recipes/recipeApi";
@@ -9,6 +9,7 @@ import { PageHeader } from "../components/PageHeader";
 const FEATURED_LIMIT = 4;
 
 export function DashboardPage() {
+  const navigate = useNavigate();
   const [recipes, setRecipes] = useState<Recipe[] | null>(null);
   const [error, setError] = useState<string | null>(null);
 
@@ -69,7 +70,7 @@ export function DashboardPage() {
                   /* add favorite persistence in a future step */
                 }}
                 onOpen={(id) => {
-                  window.history.pushState({}, "", `/recipes/${id}`);
+                  navigate(`/recipes/${id}`);
                 }}
               />
             ))}
