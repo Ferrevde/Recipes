@@ -2,6 +2,8 @@
 
 A focused recipe collection built with React, TypeScript, Vite, React Router, and plain CSS. The interface follows the dark, token-driven visual language of [Fitness-Hub](https://github.com/Ferrevde/Fitness-Hub), with a recipe-specific domain layer.
 
+**Live app:** [recipes-9nv.pages.dev](https://recipes-9nv.pages.dev/)
+
 ## Features
 
 - Dashboard with featured recipes and collection stats
