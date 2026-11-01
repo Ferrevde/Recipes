@@ -94,7 +94,9 @@ export function RecipeEditorPage() {
       .storedById(recipeId)
       .then((recipe) => {
         if (!recipe) {
-          setError("Alleen lokaal opgeslagen recepten kunnen worden bewerkt.");
+          setError(
+            "Alleen recepten in de gedeelde receptenverzameling kunnen worden bewerkt.",
+          );
           return;
         }
         applyRecipeInput(recipe);
@@ -184,8 +186,8 @@ export function RecipeEditorPage() {
         title={isEditing ? "Recept bewerken" : "Recept toevoegen"}
         description={
           isEditing
-            ? "Werk dit recept bij in je lokale receptenverzameling."
-            : "Sla een recept op in je lokale receptenverzameling."
+            ? "Werk dit recept bij in je gedeelde receptenverzameling."
+            : "Sla een recept op in je gedeelde receptenverzameling."
         }
       />
 

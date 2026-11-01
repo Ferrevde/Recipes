@@ -20,7 +20,7 @@ npm install
 npm run dev
 ```
 
-De editor is beschikbaar via de knop **Toevoegen**. Recepten worden lokaal gevalideerd en opgeslagen.
+De editor is beschikbaar via de knop **Toevoegen**. Recepten worden server-side gevalideerd en opgeslagen in Cloudflare D1.
 
 Run the full quality gate before committing:
 
@@ -30,7 +30,7 @@ npm run check
 
 ## Data model
 
-De ingebouwde catalogus blijft beschikbaar als basiscollectie. Zelfgemaakte recepten worden lokaal in de browser opgeslagen. De screenshot-import gebruikt Gemini rechtstreeks vanuit de browser. De UI praat alleen met `recipesApi`, zodat de gegevenslaag centraal blijft. Boundary-contracten en validatie staan in `shared/recipe.ts`.
+De ingebouwde catalogus blijft beschikbaar als basiscollectie. Zelfgemaakte recepten worden via `recipesApi` opgeslagen in Cloudflare D1. Screenshot-import gebruikt Gemini vanuit de Cloudflare Worker; de API-key staat als secret op de Worker en komt niet in de browser. Boundary-contracten en validatie staan in `shared/recipe.ts`.
 
 ## Project structure
 

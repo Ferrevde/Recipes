@@ -25,4 +25,4 @@ node scripts/gen-icons.mjs
 
 ## Adding recipe data
 
-The built-in collection lives in `src/features/recipes/recipeCatalog.ts`. User-created recipes go through `RecipeEditorPage` and are stored locally in the browser. Keep IDs stable for built-in entries, use existing categories and difficulty values, and preserve the `Recipe` contract.
+The built-in collection lives in `src/features/recipes/recipeCatalog.ts`. User-created recipes go through `RecipeEditorPage` and the server-side `recipesApi`/D1 boundary. Keep IDs stable for built-in entries, use existing categories and difficulty values, and preserve the `Recipe` contract.
