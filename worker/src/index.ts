@@ -7,6 +7,7 @@ import {
 } from "../../shared/recipe";
 
 interface Env {
+  ASSETS: Fetcher;
   DB: D1Database;
   GEMINI_API_KEY?: string;
 }
@@ -236,6 +237,9 @@ export default {
         if (request.method === "DELETE") {
           return await deleteRecipe(id, env);
         }
+      }
+      if (request.method === "GET" || request.method === "HEAD") {
+        return env.ASSETS.fetch(request);
       }
       return json({ error: "Niet gevonden." }, 404);
     } catch (error) {

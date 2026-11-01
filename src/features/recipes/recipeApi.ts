@@ -31,9 +31,6 @@ function mergeRecipes(remoteRecipes: Recipe[]): Recipe[] {
 }
 
 async function storedRecipe(id: string): Promise<Recipe | null> {
-  if (!API_BASE) {
-    return null;
-  }
   const response = await fetch(
     remoteUrl(`/api/recipes/${encodeURIComponent(id)}`),
   );
@@ -48,9 +45,6 @@ async function storedRecipe(id: string): Promise<Recipe | null> {
 
 export const recipesApi = {
   async list(): Promise<Recipe[]> {
-    if (!API_BASE) {
-      return recipeCatalog;
-    }
     try {
       return mergeRecipes(
         await readRecipeResponse(await fetch(remoteUrl("/api/recipes"))),
@@ -77,9 +71,6 @@ export const recipesApi = {
   },
 
   async importFromUrl(url: string): Promise<RecipeInput> {
-    if (!API_BASE) {
-      throw new Error("Receptenopslag is niet ingesteld voor deze omgeving.");
-    }
     const response = await fetch(remoteUrl("/api/import"), {
       body: JSON.stringify({ url }),
       headers: { "Content-Type": "application/json" },
@@ -105,9 +96,6 @@ export const recipesApi = {
   },
 
   async importFromImage(image: File): Promise<RecipeInput> {
-    if (!API_BASE) {
-      throw new Error("Receptenopslag is niet ingesteld voor deze omgeving.");
-    }
     const form = new FormData();
     form.set("image", image);
     const response = await fetch(remoteUrl("/api/import-image"), {
@@ -142,9 +130,6 @@ export const recipesApi = {
   },
 
   async remove(id: string): Promise<void> {
-    if (!API_BASE) {
-      throw new Error("Receptenopslag is niet ingesteld voor deze omgeving.");
-    }
     const response = await fetch(
       remoteUrl(`/api/recipes/${encodeURIComponent(id)}`),
       {
@@ -162,9 +147,6 @@ async function sendRecipe(
   path: string,
   input: RecipeInput,
 ): Promise<Recipe> {
-  if (!API_BASE) {
-    throw new Error("Receptenopslag is niet ingesteld voor deze omgeving.");
-  }
   const response = await fetch(remoteUrl(path), {
     body: JSON.stringify(input),
     headers: { "Content-Type": "application/json" },
