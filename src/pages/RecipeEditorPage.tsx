@@ -151,7 +151,7 @@ export function RecipeEditorPage() {
         }
       />
 
-      {isLoading && <p className="loading-state">Loading recipe…</p>}
+      {isLoading && <p className="loading-state">Recept laden…</p>}
       {!isLoading && (
         <form className="recipe-editor__form" onSubmit={submit}>
           {error && <p className="alert alert--error">{error}</p>}
