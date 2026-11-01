@@ -1,4 +1,4 @@
-import type { Recipe } from "../../shared/recipe";
+import type { Recipe, RecipeCategory } from "../../shared/recipe";
 import { validateRecipe } from "../../shared/recipe";
 
 type RecipeInput = Omit<Recipe, "id">;
@@ -21,6 +21,56 @@ class GeminiError extends Error {
   }
 }
 
+interface JsonLdRecipe {
+  "@type"?: unknown;
+  name?: unknown;
+  description?: unknown;
+  recipeCategory?: unknown;
+  prepTime?: unknown;
+  cookTime?: unknown;
+  totalTime?: unknown;
+  recipeYield?: unknown;
+  recipeIngredient?: unknown;
+  recipeInstructions?: unknown;
+  keywords?: unknown;
+}
+
+export async function importRecipeFromUrl(
+  sourceUrl: string,
+  apiKey: string | undefined,
+): Promise<RecipeInput> {
+  const url = parseUrl(sourceUrl);
+  const response = await fetch(url, {
+    headers: {
+      Accept: "text/html,application/xhtml+xml",
+      "User-Agent": "Receptenboek/1.0 openbare receptimport",
+    },
+  });
+  const html = await response.text();
+  if (
+    /token\.roularta\.be|sso\.roularta\.be/i.test(response.url) ||
+    /<title>\s*inloggen\s*<\/title>/i.test(html)
+  ) {
+    throw new Error(
+      "Deze website vereist een persoonlijke login. Openbare receptenpagina's kunnen wel worden geïmporteerd.",
+    );
+  }
+  if (!response.ok)
+    throw new Error(`De website gaf status ${response.status}.`);
+  const source = findRecipe(html);
+  if (!source) {
+    throw new Error(
+      "Op deze website werd geen gestructureerd recept gevonden. Probeer een andere receptenpagina.",
+    );
+  }
+  const draft = toRecipeInput(source);
+  const translated = await translateRecipe(draft, apiKey);
+  const valid = validateRecipe({ id: "import-preview", ...translated });
+  if (!valid) throw new Error("Het recept kon niet volledig worden gelezen.");
+  const { id: _id, ...input } = valid;
+  return input;
+}
+
 export async function importRecipeFromImage(
   image: File,
   apiKey: string | undefined,
@@ -39,7 +89,13 @@ export async function importRecipeFromImage(
   let lastError: unknown = null;
   for (const model of GEMINI_MODEL_FALLBACKS) {
     try {
-      const body = await requestGeminiModel(apiKey, model, image, imageData);
+      const body = await requestGeminiModel(
+        apiKey,
+        model,
+        image,
+        `Lees het recept uit deze afbeelding (${image.name}) en zet het om naar het gevraagde JSON-formaat.`,
+        imageData,
+      );
       const parsed = parseGeminiJson(readGeminiText(body));
       const recipe = validateRecipe({
         id: "image-preview",
@@ -68,11 +124,210 @@ export async function importRecipeFromImage(
     : new Error("Gemini kon de screenshot niet verwerken.");
 }
 
+function parseUrl(sourceUrl: string): URL {
+  let url: URL;
+  try {
+    url = new URL(sourceUrl);
+  } catch {
+    throw new Error("Vul een geldige website-URL in.");
+  }
+  if (url.protocol !== "http:" && url.protocol !== "https:") {
+    throw new Error(
+      "Alleen http- en https-websites kunnen worden geïmporteerd.",
+    );
+  }
+  return url;
+}
+
+function findRecipe(html: string): JsonLdRecipe | null {
+  const scripts = html.matchAll(
+    /<script[^>]*type=["']application\/ld\+json["'][^>]*>([\s\S]*?)<\/script>/gi,
+  );
+  for (const match of scripts) {
+    try {
+      const data: unknown = JSON.parse(match[1] ?? "");
+      const recipe = findRecipeObject(data);
+      if (recipe) return recipe;
+    } catch {
+      // Probeer het volgende JSON-LD-blok.
+    }
+  }
+  return null;
+}
+
+function findRecipeObject(input: unknown): JsonLdRecipe | null {
+  if (Array.isArray(input)) {
+    for (const item of input) {
+      const recipe = findRecipeObject(item);
+      if (recipe) return recipe;
+    }
+    return null;
+  }
+  if (!input || typeof input !== "object") return null;
+  const value = input as JsonLdRecipe & { "@graph"?: unknown };
+  const type = value["@type"];
+  if (
+    (typeof type === "string" && type.toLowerCase() === "recipe") ||
+    (Array.isArray(type) && type.some((item) => item === "Recipe"))
+  ) {
+    return value;
+  }
+  return findRecipeObject(value["@graph"]);
+}
+
+function toRecipeInput(source: JsonLdRecipe): RecipeInput {
+  const ingredients = asStrings(source.recipeIngredient).map(parseIngredient);
+  const prepMinutes = parseDuration(asText(source.prepTime));
+  const cookMinutes = parseDuration(asText(source.cookTime));
+  const totalMinutes = parseDuration(asText(source.totalTime));
+  return {
+    category: mapCategory(asText(source.recipeCategory)),
+    cookMinutes: cookMinutes || Math.max(totalMinutes - prepMinutes, 0),
+    difficulty: "Easy",
+    ingredients,
+    prepMinutes,
+    servings: parseServings(source.recipeYield),
+    steps: asInstructions(source.recipeInstructions),
+    summary: asText(source.description),
+    tags: asText(source.keywords)
+      .split(",")
+      .map((tag) => tag.trim())
+      .filter(Boolean),
+    title: asText(source.name) || "Geïmporteerd recept",
+  };
+}
+
+async function translateRecipe(
+  input: RecipeInput,
+  apiKey: string | undefined,
+): Promise<RecipeInput> {
+  if (!apiKey) return input;
+  try {
+    const body = await requestGeminiText(
+      apiKey,
+      `Vertaal dit recept volledig naar natuurlijk Nederlands. Behoud hoeveelheden en getallen exact. Geef uitsluitend geldige JSON terug met exact deze velden: title, summary, ingredients (array met amount, unit, title), steps (array strings), tags (array strings). Recept: ${JSON.stringify(input)}`,
+    );
+    const parsed = parseGeminiJson(readGeminiText(body));
+    if (!parsed || typeof parsed !== "object") return input;
+    const value = parsed as Record<string, unknown>;
+    const ingredients = Array.isArray(value.ingredients)
+      ? value.ingredients
+          .map(asTranslatedIngredient)
+          .filter(
+            (item): item is Recipe["ingredients"][number] => item !== null,
+          )
+      : input.ingredients;
+    const steps = Array.isArray(value.steps)
+      ? value.steps.filter((step): step is string => typeof step === "string")
+      : input.steps;
+    return {
+      ...input,
+      ingredients: ingredients.length > 0 ? ingredients : input.ingredients,
+      steps: steps.length > 0 ? steps : input.steps,
+      summary: asText(value.summary) || input.summary,
+      tags: Array.isArray(value.tags)
+        ? value.tags.filter((tag): tag is string => typeof tag === "string")
+        : input.tags,
+      title: asText(value.title) || input.title,
+    };
+  } catch {
+    return input;
+  }
+}
+
+async function requestGeminiText(
+  apiKey: string,
+  prompt: string,
+): Promise<unknown> {
+  for (const model of GEMINI_MODEL_FALLBACKS) {
+    try {
+      return await requestGeminiModel(apiKey, model, null, prompt);
+    } catch (error) {
+      if (
+        !shouldTryFallback(
+          error instanceof GeminiError ? error : new GeminiError("Gemini-fout"),
+        )
+      )
+        throw error;
+    }
+  }
+  throw new GeminiError("Gemini kon het recept niet vertalen.");
+}
+
+function asTranslatedIngredient(
+  input: unknown,
+): Recipe["ingredients"][number] | null {
+  if (!input || typeof input !== "object") return null;
+  const value = input as Record<string, unknown>;
+  const title = asText(value.title);
+  return title
+    ? { amount: asText(value.amount), title, unit: asText(value.unit) }
+    : null;
+}
+
+function asInstructions(input: unknown): string[] {
+  if (!Array.isArray(input)) return [];
+  return input
+    .map((step) =>
+      typeof step === "string"
+        ? stripTags(step)
+        : step && typeof step === "object" && "text" in step
+          ? stripTags(asText((step as { text?: unknown }).text))
+          : "",
+    )
+    .filter(Boolean);
+}
+
+function asStrings(input: unknown): string[] {
+  return Array.isArray(input) ? input.map(asText).filter(Boolean) : [];
+}
+
+function asText(input: unknown): string {
+  return typeof input === "string" || typeof input === "number"
+    ? String(input).trim()
+    : "";
+}
+
+function parseIngredient(value: string): Recipe["ingredients"][number] {
+  const match = value.match(/^(\S+(?:\s+\S+)?)\s+(.+)$/);
+  return match
+    ? { amount: match[1] ?? "", title: match[2] ?? value, unit: "" }
+    : { amount: "", title: value, unit: "" };
+}
+
+function parseDuration(value: string): number {
+  const match = value.match(/PT(?:(\d+)H)?(?:(\d+)M)?/i);
+  return match ? Number(match[1] ?? 0) * 60 + Number(match[2] ?? 0) : 0;
+}
+
+function parseServings(value: unknown): number {
+  const match = asText(value).match(/\d+/);
+  return match ? Math.max(1, Number(match[0])) : 1;
+}
+
+function mapCategory(value: string): RecipeCategory {
+  const lower = value.toLowerCase();
+  if (lower.includes("ontbijt") || lower.includes("breakfast"))
+    return "breakfast";
+  if (lower.includes("lunch")) return "lunch";
+  if (lower.includes("dessert") || lower.includes("zoet")) return "dessert";
+  if (lower.includes("snack") || lower.includes("tussendoor")) return "snack";
+  return "dinner";
+}
+
+function stripTags(value: string): string {
+  return value
+    .replace(/<[^>]*>/g, "")
+    .replace(/\s+/g, " ")
+    .trim();
+}
+
 async function requestGeminiModel(
   apiKey: string,
   model: string,
-  image: File,
-  imageData: string,
+  image: File | null,
+  prompt: string,
+  imageData?: string,
 ): Promise<unknown> {
   const controller = new AbortController();
   const timeout = setTimeout(() => controller.abort(), GEMINI_TIMEOUT_MS);
@@ -96,17 +351,18 @@ async function requestGeminiModel(
           contents: [
             {
               role: "user",
-              parts: [
-                {
-                  text: `Lees het recept uit deze afbeelding (${image.name}) en zet het om naar het gevraagde JSON-formaat.`,
-                },
-                {
-                  inline_data: {
-                    data: imageData,
-                    mime_type: image.type,
-                  },
-                },
-              ],
+              parts:
+                image && imageData
+                  ? [
+                      { text: prompt },
+                      {
+                        inline_data: {
+                          data: imageData,
+                          mime_type: image.type,
+                        },
+                      },
+                    ]
+                  : [{ text: prompt }],
             },
           ],
           generationConfig: { responseMimeType: "application/json" },

@@ -41,6 +41,8 @@ export function RecipeEditorPage() {
   ]);
   const [steps, setSteps] = useState([""]);
   const [tags, setTags] = useState("");
+  const [importUrl, setImportUrl] = useState("");
+  const [isImporting, setIsImporting] = useState(false);
   const [imageFile, setImageFile] = useState<File | null>(null);
   const [isImageImporting, setIsImageImporting] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -68,6 +70,22 @@ export function RecipeEditorPage() {
     );
     setSteps(recipe.steps);
     setTags(recipe.tags.join(", "));
+  }
+
+  async function importFromWebsite() {
+    if (!importUrl.trim()) return;
+    setError(null);
+    setIsImporting(true);
+    try {
+      applyRecipeInput(await recipesApi.importFromUrl(importUrl));
+      setImportUrl("");
+    } catch (reason) {
+      setError(
+        reason instanceof Error ? reason.message : "Importeren mislukt.",
+      );
+    } finally {
+      setIsImporting(false);
+    }
   }
 
   async function importFromImage() {
@@ -195,9 +213,29 @@ export function RecipeEditorPage() {
       {!isLoading && (
         <form className="recipe-editor__form" onSubmit={submit}>
           <div className="recipe-editor__import">
+            <label htmlFor="recipe-source-url">
+              Recept importeren van een openbare webpagina
+              <span className="recipe-editor__import-row">
+                <input
+                  id="recipe-source-url"
+                  type="url"
+                  placeholder="https://voorbeeld.nl/recept"
+                  value={importUrl}
+                  onChange={(event) => setImportUrl(event.target.value)}
+                />
+                <button
+                  className="button button--secondary"
+                  type="button"
+                  disabled={isImporting || importUrl.trim().length === 0}
+                  onClick={() => void importFromWebsite()}
+                >
+                  {isImporting ? "Pagina lezen…" : "Importeer pagina"}
+                </button>
+              </span>
+            </label>
             <small>
-              Gemini leest de screenshot, vertaalt de inhoud naar het Nederlands
-              en laat je alles eerst controleren.
+              Alleen openbare pagina’s met gestructureerde receptgegevens
+              werken. Loginpagina’s worden niet omzeild.
             </small>
             <div className="recipe-editor__image-import">
               <label htmlFor="recipe-screenshot">

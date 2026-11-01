@@ -1,5 +1,5 @@
 import type { Recipe } from "../../shared/recipe";
-import { importRecipeFromImage } from "./recipeImport";
+import { importRecipeFromImage, importRecipeFromUrl } from "./recipeImport";
 import {
   recipeCategories,
   recipeDifficulties,
@@ -63,6 +63,29 @@ function recipeFromRow(row: RecipeRow): Recipe | null {
 function isValidRecipeInput(input: unknown): input is Recipe {
   const recipe = validateRecipe(input);
   return recipe !== null;
+}
+
+async function importRecipe(request: Request, env: Env): Promise<Response> {
+  let body: unknown;
+  try {
+    body = await request.json();
+  } catch {
+    return json({ error: "De aanvraag moet geldige JSON bevatten." }, 400);
+  }
+  const sourceUrl =
+    body && typeof body === "object" && "url" in body
+      ? String((body as { url?: unknown }).url ?? "")
+      : "";
+  try {
+    return json(
+      await importRecipeFromUrl(sourceUrl, env.GEMINI_API_KEY?.trim()),
+    );
+  } catch (error) {
+    return json(
+      { error: error instanceof Error ? error.message : "Importeren mislukt." },
+      422,
+    );
+  }
 }
 
 async function importRecipeImage(
@@ -217,6 +240,9 @@ export default {
     const path = url.pathname.replace(/\/+$/, "");
 
     try {
+      if (path === "/api/import" && request.method === "POST") {
+        return await importRecipe(request, env);
+      }
       if (path === "/api/import-image" && request.method === "POST") {
         return await importRecipeImage(request, env);
       }
