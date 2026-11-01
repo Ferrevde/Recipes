@@ -20,7 +20,7 @@ npm install
 npm run dev
 ```
 
-The editor is available from the **Add** button. It sends validated recipes to the deployed Worker and D1 database.
+De editor is beschikbaar via de knop **Toevoegen**. Recepten worden lokaal gevalideerd en opgeslagen.
 
 Run the full quality gate before committing:
 
@@ -30,7 +30,7 @@ npm run check
 
 ## Data model
 
-The built-in catalog remains available as a curated baseline, while user-created recipes are stored in Cloudflare D1 through the Worker API. UI code talks only to `recipesApi`, so the data source stays replaceable. Boundary contracts and validation live in `shared/recipe.ts`.
+De ingebouwde catalogus blijft beschikbaar als basiscollectie. Zelfgemaakte recepten worden lokaal in de browser opgeslagen. De screenshot-import gebruikt Gemini rechtstreeks vanuit de browser. De UI praat alleen met `recipesApi`, zodat de gegevenslaag centraal blijft. Boundary-contracten en validatie staan in `shared/recipe.ts`.
 
 ## Project structure
 

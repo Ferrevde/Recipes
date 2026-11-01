@@ -1,4 +1,4 @@
-// De vaste basiscollectie. Nieuwe recepten worden via recipesApi uit D1 geladen.
+// De vaste basiscollectie. Nieuwe recepten worden lokaal via recipesApi geladen.
 
 import type { Recipe } from "../../../shared/recipe";
 import { validateRecipe } from "../../../shared/recipe";

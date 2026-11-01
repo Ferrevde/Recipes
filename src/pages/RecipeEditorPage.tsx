@@ -41,9 +41,7 @@ export function RecipeEditorPage() {
   ]);
   const [steps, setSteps] = useState([""]);
   const [tags, setTags] = useState("");
-  const [importUrl, setImportUrl] = useState("");
   const [imageFile, setImageFile] = useState<File | null>(null);
-  const [isImporting, setIsImporting] = useState(false);
   const [isImageImporting, setIsImageImporting] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [isSaving, setIsSaving] = useState(false);
@@ -88,21 +86,6 @@ export function RecipeEditorPage() {
     }
   }
 
-  async function importFromWebsite() {
-    setError(null);
-    setIsImporting(true);
-    try {
-      applyRecipeInput(await recipesApi.importFromUrl(importUrl));
-      setImportUrl("");
-    } catch (reason) {
-      setError(
-        reason instanceof Error ? reason.message : "Importeren mislukt.",
-      );
-    } finally {
-      setIsImporting(false);
-    }
-  }
-
   useEffect(() => {
     if (!recipeId) {
       return;
@@ -111,9 +94,7 @@ export function RecipeEditorPage() {
       .storedById(recipeId)
       .then((recipe) => {
         if (!recipe) {
-          setError(
-            "Alleen recepten die in D1 zijn opgeslagen kunnen worden bewerkt.",
-          );
+          setError("Alleen lokaal opgeslagen recepten kunnen worden bewerkt.");
           return;
         }
         applyRecipeInput(recipe);
@@ -203,8 +184,8 @@ export function RecipeEditorPage() {
         title={isEditing ? "Recept bewerken" : "Recept toevoegen"}
         description={
           isEditing
-            ? "Werk dit recept bij in je Cloudflare D1-verzameling."
-            : "Sla een recept op in je Cloudflare D1-verzameling."
+            ? "Werk dit recept bij in je lokale receptenverzameling."
+            : "Sla een recept op in je lokale receptenverzameling."
         }
       />
 
@@ -212,29 +193,9 @@ export function RecipeEditorPage() {
       {!isLoading && (
         <form className="recipe-editor__form" onSubmit={submit}>
           <div className="recipe-editor__import">
-            <label htmlFor="recipe-source-url">
-              Recept importeren van een website
-              <span className="recipe-editor__import-row">
-                <input
-                  id="recipe-source-url"
-                  type="url"
-                  placeholder="https://voorbeeld.nl/recept"
-                  value={importUrl}
-                  onChange={(event) => setImportUrl(event.target.value)}
-                />
-                <button
-                  className="button button--secondary"
-                  type="button"
-                  disabled={isImporting || importUrl.trim().length === 0}
-                  onClick={() => void importFromWebsite()}
-                >
-                  {isImporting ? "Importeren…" : "Importeer"}
-                </button>
-              </span>
-            </label>
             <small>
-              De gevonden gegevens worden naar het Nederlands vertaald en
-              blijven eerst bewerkbaar.
+              Gemini leest de screenshot, vertaalt de inhoud naar het Nederlands
+              en laat je alles eerst controleren.
             </small>
             <div className="recipe-editor__image-import">
               <label htmlFor="recipe-screenshot">

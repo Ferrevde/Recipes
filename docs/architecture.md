@@ -13,9 +13,9 @@ Recipe Book is a frontend-only Vite application. The architecture mirrors Fitnes
 
 ## Data boundary
 
-`recipesApi` reads the curated in-memory catalog and, when configured, merges user-created recipes from the Cloudflare Worker API. Components never import the catalog directly. The Worker validates requests at the boundary and stores user recipes in D1.
+`recipesApi` leest de vaste catalogus en voegt lokaal opgeslagen recepten toe. Componenten importeren de catalogus nooit rechtstreeks. Gemini wordt rechtstreeks vanuit de browser aangeroepen voor screenshot-import.
 
-Favorites are a client-only preference stored under `recipes.savedIds` through `useLocalStorage`. New recipes are created at `/recipes/new` and persisted through `POST /api/recipes`.
+Favorieten en zelfgemaakte recepten zijn lokale browservoorkeuren. Nieuwe recepten worden aangemaakt op `/recipes/new` en opgeslagen in `localStorage`.
 
 ## Styling
 
@@ -23,4 +23,4 @@ Design tokens are centralized in `src/styles/tokens.css`. Shared Fitness-Hub-ins
 
 ## Quality gates
 
-`npm run check` runs formatting, linting, strict TypeScript checks for both app and Worker, tests, and the production build. Worker deployment uses `npx wrangler deploy`; remote D1 migrations use `npm run d1:migrate:remote`.
+`npm run check` voert formattering, linting, strikte TypeScript-controles, tests en de productie-build uit.
