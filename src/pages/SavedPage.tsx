@@ -11,7 +11,10 @@ const FAVORITES_KEY = "recipes.savedIds";
 
 export function SavedPage() {
   const navigate = useNavigate();
-  const [savedIds] = useLocalStorage(FAVORITES_KEY, [] as string[]);
+  const [savedIds, setSavedIds] = useLocalStorage(
+    FAVORITES_KEY,
+    [] as string[],
+  );
   const [recipes, setRecipes] = useState<Recipe[] | null>(null);
   const [error, setError] = useState<string | null>(null);
 
@@ -54,7 +57,11 @@ export function SavedPage() {
               recipe={recipe}
               icon={Bookmark}
               isFavorite
-              onToggleFavorite={() => {}}
+              onToggleFavorite={(id) =>
+                setSavedIds((current) =>
+                  current.filter((savedId) => savedId !== id),
+                )
+              }
               onOpen={(id) => {
                 navigate(`/recipes/${id}`);
               }}

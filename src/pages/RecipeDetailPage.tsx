@@ -147,13 +147,13 @@ export function RecipeDetailPage() {
                     : "Bewaar recept"
                 }
                 aria-pressed={favoriteIds.includes(recipe.id)}
-                onClick={() => {
-                  const isSaved = favoriteIds.includes(recipe.id);
-                  const next = isSaved
-                    ? favoriteIds.filter((id) => id !== recipe.id)
-                    : [...favoriteIds, recipe.id];
-                  setFavoriteIds(next);
-                }}
+                onClick={() =>
+                  setFavoriteIds((current) =>
+                    current.includes(recipe.id)
+                      ? current.filter((id) => id !== recipe.id)
+                      : [...current, recipe.id],
+                  )
+                }
               >
                 <Bookmark
                   size={20}

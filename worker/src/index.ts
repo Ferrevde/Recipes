@@ -36,7 +36,7 @@ const corsHeaders = {
 function json(data: unknown, status = 200): Response {
   return new Response(JSON.stringify(data), {
     status,
-    headers: corsHeaders,
+    headers: { ...corsHeaders, "Cache-Control": "no-store" },
   });
 }
 
