@@ -1,4 +1,5 @@
 import type { Recipe } from "../../shared/recipe";
+import { importRecipeFromUrl } from "./recipeImport";
 import {
   recipeCategories,
   recipeDifficulties,
@@ -6,6 +7,7 @@ import {
 } from "../../shared/recipe";
 
 interface Env {
+  AI: Ai;
   DB: D1Database;
 }
 
@@ -60,6 +62,27 @@ function recipeFromRow(row: RecipeRow): Recipe | null {
 function isValidRecipeInput(input: unknown): input is Recipe {
   const recipe = validateRecipe(input);
   return recipe !== null;
+}
+
+async function importRecipe(request: Request, env: Env): Promise<Response> {
+  let body: unknown;
+  try {
+    body = await request.json();
+  } catch {
+    return json({ error: "De aanvraag moet geldige JSON bevatten." }, 400);
+  }
+  const url =
+    body && typeof body === "object" && "url" in body
+      ? String((body as { url?: unknown }).url ?? "")
+      : "";
+  try {
+    return json(await importRecipeFromUrl(url, env.AI));
+  } catch (error) {
+    return json(
+      { error: error instanceof Error ? error.message : "Importeren mislukt." },
+      422,
+    );
+  }
 }
 
 async function listRecipes(env: Env): Promise<Response> {
@@ -190,6 +213,9 @@ export default {
     const path = url.pathname.replace(/\/+$/, "");
 
     try {
+      if (path === "/api/import" && request.method === "POST") {
+        return await importRecipe(request, env);
+      }
       if (path === "/api/recipes" && request.method === "GET") {
         return await listRecipes(env);
       }

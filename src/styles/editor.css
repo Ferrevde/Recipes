@@ -42,6 +42,25 @@
   resize: vertical;
 }
 
+.recipe-editor__import {
+  background: var(--color-accent-soft);
+  border: 1px solid rgb(184 243 61 / 18%);
+  border-radius: 0.9rem;
+  padding: 1rem;
+}
+
+.recipe-editor__import-row {
+  align-items: center;
+  display: grid;
+  gap: 0.6rem;
+  grid-template-columns: 1fr auto;
+}
+
+.recipe-editor__import small {
+  display: block;
+  margin-top: 0.5rem;
+}
+
 .recipe-editor__grid {
   display: grid;
   gap: 1rem;

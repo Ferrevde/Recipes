@@ -7,3 +7,6 @@ binding = "DB"
 database_name = "recipes-db"
 database_id = "16e17c6a-51bc-461e-acc2-56628ac55108"
 migrations_dir = "migrations"
+
+[ai]
+binding = "AI"

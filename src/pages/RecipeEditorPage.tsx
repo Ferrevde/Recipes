@@ -41,12 +41,49 @@ export function RecipeEditorPage() {
   ]);
   const [steps, setSteps] = useState([""]);
   const [tags, setTags] = useState("");
+  const [importUrl, setImportUrl] = useState("");
+  const [isImporting, setIsImporting] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [isSaving, setIsSaving] = useState(false);
   const [isLoading, setIsLoading] = useState(isEditing);
   const [focusedIngredientKey, setFocusedIngredientKey] = useState<
     number | null
   >(null);
+
+  function applyRecipeInput(recipe: RecipeInput) {
+    setTitle(recipe.title);
+    setCategory(recipe.category);
+    setDifficulty(recipe.difficulty);
+    setPrepMinutes(String(recipe.prepMinutes));
+    setCookMinutes(String(recipe.cookMinutes));
+    setServings(String(recipe.servings));
+    setSummary(recipe.summary);
+    setIngredients(
+      recipe.ingredients.map((ingredient, key) => ({
+        amount: [ingredient.amount, ingredient.unit].filter(Boolean).join(" "),
+        key,
+        title: ingredient.title,
+        unit: "",
+      })),
+    );
+    setSteps(recipe.steps);
+    setTags(recipe.tags.join(", "));
+  }
+
+  async function importFromWebsite() {
+    setError(null);
+    setIsImporting(true);
+    try {
+      applyRecipeInput(await recipesApi.importFromUrl(importUrl));
+      setImportUrl("");
+    } catch (reason) {
+      setError(
+        reason instanceof Error ? reason.message : "Importeren mislukt.",
+      );
+    } finally {
+      setIsImporting(false);
+    }
+  }
 
   useEffect(() => {
     if (!recipeId) {
@@ -61,25 +98,7 @@ export function RecipeEditorPage() {
           );
           return;
         }
-        setTitle(recipe.title);
-        setCategory(recipe.category);
-        setDifficulty(recipe.difficulty);
-        setPrepMinutes(String(recipe.prepMinutes));
-        setCookMinutes(String(recipe.cookMinutes));
-        setServings(String(recipe.servings));
-        setSummary(recipe.summary);
-        setIngredients(
-          recipe.ingredients.map((ingredient, key) => ({
-            amount: [ingredient.amount, ingredient.unit]
-              .filter(Boolean)
-              .join(" "),
-            key,
-            title: ingredient.title,
-            unit: "",
-          })),
-        );
-        setSteps(recipe.steps);
-        setTags(recipe.tags.join(", "));
+        applyRecipeInput(recipe);
       })
       .catch((reason: unknown) =>
         setError(
@@ -174,6 +193,32 @@ export function RecipeEditorPage() {
       {isLoading && <p className="loading-state">Recept laden…</p>}
       {!isLoading && (
         <form className="recipe-editor__form" onSubmit={submit}>
+          <div className="recipe-editor__import">
+            <label htmlFor="recipe-source-url">
+              Recept importeren van een website
+              <span className="recipe-editor__import-row">
+                <input
+                  id="recipe-source-url"
+                  type="url"
+                  placeholder="https://voorbeeld.nl/recept"
+                  value={importUrl}
+                  onChange={(event) => setImportUrl(event.target.value)}
+                />
+                <button
+                  className="button button--secondary"
+                  type="button"
+                  disabled={isImporting || importUrl.trim().length === 0}
+                  onClick={() => void importFromWebsite()}
+                >
+                  {isImporting ? "Importeren…" : "Importeer"}
+                </button>
+              </span>
+            </label>
+            <small>
+              De gevonden gegevens worden naar het Nederlands vertaald en
+              blijven eerst bewerkbaar.
+            </small>
+          </div>
           {error && <p className="alert alert--error">{error}</p>}
 
           <div className="recipe-editor__grid">

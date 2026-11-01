@@ -76,6 +76,34 @@ export const recipesApi = {
     return storedRecipe(id);
   },
 
+  async importFromUrl(url: string): Promise<RecipeInput> {
+    if (!API_BASE) {
+      throw new Error("Receptenopslag is niet ingesteld voor deze omgeving.");
+    }
+    const response = await fetch(remoteUrl("/api/import"), {
+      body: JSON.stringify({ url }),
+      headers: { "Content-Type": "application/json" },
+      method: "POST",
+    });
+    if (!response.ok) {
+      const body: unknown = await response.json().catch(() => null);
+      const message =
+        body && typeof body === "object" && "error" in body
+          ? String(body.error)
+          : "Het recept kon niet worden geïmporteerd.";
+      throw new Error(message);
+    }
+    const recipe = validateRecipe({
+      id: "import-preview",
+      ...(await response.json()),
+    });
+    if (!recipe) {
+      throw new Error("De import gaf geen geldig recept terug.");
+    }
+    const { id: _id, ...input } = recipe;
+    return input;
+  },
+
   async create(input: RecipeInput): Promise<Recipe> {
     return sendRecipe("POST", "/api/recipes", input);
   },
