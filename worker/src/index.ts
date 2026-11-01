@@ -79,7 +79,7 @@ async function getRecipe(id: string, env: Env): Promise<Response> {
     .bind(id)
     .first<RecipeRow>();
   const recipe = row ? recipeFromRow(row) : null;
-  return recipe ? json(recipe) : json({ error: "Recipe not found." }, 404);
+  return recipe ? json(recipe) : json({ error: "Recept niet gevonden." }, 404);
 }
 
 async function updateRecipe(
@@ -91,7 +91,7 @@ async function updateRecipe(
   try {
     body = await request.json();
   } catch {
-    return json({ error: "Request body must be valid JSON." }, 400);
+    return json({ error: "De aanvraag moet geldige JSON bevatten." }, 400);
   }
 
   const input =
@@ -99,7 +99,7 @@ async function updateRecipe(
       ? { ...(body as Record<string, unknown>), id }
       : null;
   if (!isValidRecipeInput(input)) {
-    return json({ error: "The recipe data is invalid." }, 400);
+    return json({ error: "De receptgegevens zijn ongeldig." }, 400);
   }
 
   const result = await env.DB.prepare(
@@ -124,7 +124,7 @@ async function updateRecipe(
 
   return result.meta.changes > 0
     ? json(input)
-    : json({ error: "Recipe not found." }, 404);
+    : json({ error: "Recept niet gevonden." }, 404);
 }
 
 async function deleteRecipe(id: string, env: Env): Promise<Response> {
@@ -133,7 +133,7 @@ async function deleteRecipe(id: string, env: Env): Promise<Response> {
     .run();
   return result.meta.changes > 0
     ? new Response(null, { status: 204, headers: corsHeaders })
-    : json({ error: "Recipe not found." }, 404);
+    : json({ error: "Recept niet gevonden." }, 404);
 }
 
 async function createRecipe(request: Request, env: Env): Promise<Response> {
@@ -141,7 +141,7 @@ async function createRecipe(request: Request, env: Env): Promise<Response> {
   try {
     body = await request.json();
   } catch {
-    return json({ error: "Request body must be valid JSON." }, 400);
+    return json({ error: "De aanvraag moet geldige JSON bevatten." }, 400);
   }
 
   const input =
@@ -151,7 +151,7 @@ async function createRecipe(request: Request, env: Env): Promise<Response> {
   if (!isValidRecipeInput(input)) {
     return json(
       {
-        error: `Recipe must include a title, valid category (${recipeCategories.join(", ")}), difficulty (${recipeDifficulties.join(", ")}), timings, servings, ingredients, and steps.`,
+        error: `Een recept moet een naam en geldige categorie (${recipeCategories.join(", ")}), moeilijkheid (${recipeDifficulties.join(", ")}), tijden, porties, ingredi�nten en stappen bevatten.`,
       },
       400,
     );
@@ -208,10 +208,13 @@ export default {
           return await deleteRecipe(id, env);
         }
       }
-      return json({ error: "Not found." }, 404);
+      return json({ error: "Niet gevonden." }, 404);
     } catch (error) {
       console.error(error);
-      return json({ error: "The recipe service is unavailable." }, 500);
+      return json(
+        { error: "De receptenservice is tijdelijk niet beschikbaar." },
+        500,
+      );
     }
   },
 };

@@ -9,17 +9,17 @@ interface PreferenceRow {
 
 const PREFERENCES: PreferenceRow[] = [
   {
-    label: "Favorite category",
-    value: "Dinner",
+    label: "Favoriete categorie",
+    value: "Diner",
     icon: UtensilsCrossed,
   },
   {
-    label: "Total recipes",
+    label: "Totaal aantal recepten",
     value: "12",
     icon: ChefHat,
   },
   {
-    label: "Saved recipes",
+    label: "Bewaarde recepten",
     value: "0",
     icon: Bookmark,
   },
@@ -29,13 +29,13 @@ export function ProfilePage() {
   return (
     <div className="profile-page">
       <PageHeader
-        eyebrow="Your book"
-        title="Profile"
-        description="A quick look at how you use your recipe collection."
+        eyebrow="Jouw boek"
+        title="Profiel"
+        description="Een kort overzicht van je receptenverzameling."
       />
 
       <section className="profile-card">
-        <h2>Quick stats</h2>
+        <h2>Snelle statistieken</h2>
         <dl className="profile-preferences">
           {PREFERENCES.map((row) => (
             <div key={row.label} className="profile-preference">
@@ -50,11 +50,11 @@ export function ProfilePage() {
       </section>
 
       <section className="profile-card">
-        <h2>About the collection</h2>
+        <h2>Over de verzameling</h2>
         <p className="profile-card__text">
-          Recipe Book keeps everything in one place: browse by category, search
-          by name or ingredient, and save the recipes you want to cook again.
-          Add your own recipes to grow the collection over time.
+          Receptenboek houdt alles op één plek: blader per categorie, zoek op
+          naam of ingrediënt en bewaar recepten die je opnieuw wilt koken. Voeg
+          je eigen recepten toe om de verzameling verder uit te bouwen.
         </p>
       </section>
     </div>

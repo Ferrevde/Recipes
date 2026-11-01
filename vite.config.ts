@@ -16,9 +16,9 @@ export default defineConfig({
         navigateFallback: "/index.html",
       },
       manifest: {
-        name: "Recipe Book",
-        short_name: "Recipe Book",
-        description: "A personal recipe collection.",
+        name: "Receptenboek",
+        short_name: "Receptenboek",
+        description: "Jouw persoonlijke receptenverzameling.",
         theme_color: "#0a0d0f",
         background_color: "#0a0d0f",
         display: "standalone",

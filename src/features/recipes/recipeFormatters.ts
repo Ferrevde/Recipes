@@ -19,12 +19,13 @@ export function formatTimeParts(
   prep: string;
   cook: string;
 } {
-  const prepLabel = prepMinutes > 0 ? `${prepMinutes} min prep` : "";
-  const cookLabel = cookMinutes > 0 ? `${cookMinutes} min cook` : "no cook";
+  const prepLabel = prepMinutes > 0 ? `${prepMinutes} min voorbereiding` : "";
+  const cookLabel =
+    cookMinutes > 0 ? `${cookMinutes} min bereiding` : "niet koken";
   return { prep: prepLabel, cook: cookLabel };
 }
 
-export function formatServings(servings: number, label = "serves"): string {
+export function formatServings(servings: number, label = "porties"): string {
   return `${servings} ${label}`;
 }
 
@@ -34,7 +35,7 @@ export function formatDuration(minutes: number): string {
   }
   const hours = Math.floor(minutes / 60);
   const remaining = minutes % 60;
-  const parts = [`${hours} hr`];
+  const parts = [`${hours} uur`];
   if (remaining > 0) {
     parts.push(`${remaining} min`);
   }

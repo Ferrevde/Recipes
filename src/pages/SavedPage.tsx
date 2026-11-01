@@ -20,7 +20,7 @@ export function SavedPage() {
       .list()
       .then(setRecipes)
       .catch((reason: unknown) =>
-        setError(reason instanceof Error ? reason.message : "Failed to load."),
+        setError(reason instanceof Error ? reason.message : "Laden mislukt."),
       );
   }, []);
 
@@ -32,17 +32,17 @@ export function SavedPage() {
   return (
     <div className="saved-page">
       <PageHeader
-        eyebrow="Your collection"
-        title="Saved recipes"
-        description="Recipes you have marked for later."
+        eyebrow="Jouw verzameling"
+        title="Bewaarde recepten"
+        description="Recepten die je voor later hebt bewaard."
       />
 
       {error && <p className="alert alert--error">{error}</p>}
 
       {savedRecipes.length === 0 && recipes !== null && (
         <p className="saved-empty">
-          You haven’t saved any recipes yet. Tap the bookmark on a recipe to
-          keep it here.
+          Je hebt nog geen recepten bewaard. Tik op het bladwijzerpictogram van
+          een recept om het hier te bewaren.
         </p>
       )}
 

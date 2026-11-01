@@ -19,24 +19,24 @@ describe("formatTotalTime", () => {
 });
 
 describe("formatTimeParts", () => {
-  it("labels zero cook time as no cook", () => {
+  it("labelt geen bereidingstijd", () => {
     expect(formatTimeParts(5, 0)).toEqual({
-      prep: "5 min prep",
-      cook: "no cook",
+      prep: "5 min voorbereiding",
+      cook: "niet koken",
     });
   });
 
-  it("labels both parts", () => {
+  it("labelt beide onderdelen", () => {
     expect(formatTimeParts(10, 20)).toEqual({
-      prep: "10 min prep",
-      cook: "20 min cook",
+      prep: "10 min voorbereiding",
+      cook: "20 min bereiding",
     });
   });
 });
 
 describe("formatServings", () => {
   it("appends the serving label", () => {
-    expect(formatServings(2)).toBe("2 serves");
+    expect(formatServings(2)).toBe("2 porties");
   });
 });
 
@@ -46,10 +46,10 @@ describe("formatDuration", () => {
   });
 
   it("converts longer durations to hours and minutes", () => {
-    expect(formatDuration(75)).toBe("1 hr, 15 min");
+    expect(formatDuration(75)).toBe("1 uur, 15 min");
   });
 
   it("reports whole hours without a trailing minute", () => {
-    expect(formatDuration(60)).toBe("1 hr");
+    expect(formatDuration(60)).toBe("1 uur");
   });
 });

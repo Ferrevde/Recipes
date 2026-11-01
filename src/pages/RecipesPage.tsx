@@ -34,7 +34,7 @@ export function RecipesPage() {
       .list()
       .then(setRecipes)
       .catch((reason: unknown) =>
-        setError(reason instanceof Error ? reason.message : "Failed to load."),
+        setError(reason instanceof Error ? reason.message : "Laden mislukt."),
       );
   }, []);
 
@@ -68,9 +68,9 @@ export function RecipesPage() {
   return (
     <div className="recipes-page">
       <PageHeader
-        eyebrow="The collection"
-        title="All recipes"
-        description="Search by name, ingredient, or tag, then filter by category."
+        eyebrow="De verzameling"
+        title="Alle recepten"
+        description="Zoek op naam, ingrediënt of tag en filter daarna op categorie."
       />
 
       <div className="recipes-toolbar">
@@ -84,23 +84,23 @@ export function RecipesPage() {
           <input
             type="search"
             className="recipes-search__input"
-            placeholder="Search recipes…"
-            aria-label="Search recipes"
+            placeholder="Recepten zoeken…"
+            aria-label="Recepten zoeken"
             value={query}
             onChange={(event) => setQuery(event.target.value)}
           />
         </div>
 
         <span className="recipes-toolbar__summary" aria-live="polite">
-          {filtered.length} recipe{filtered.length === 1 ? "" : "s"}
-          {savedCount > 0 && ` · ${savedCount} saved`}
+          {filtered.length} recept{filtered.length === 1 ? "" : "en"}
+          {savedCount > 0 && ` · ${savedCount} bewaard`}
         </span>
       </div>
 
       <div
         className="recipe-categories"
         role="tablist"
-        aria-label="Filter by category"
+        aria-label="Filter op categorie"
       >
         <button
           type="button"
@@ -111,7 +111,7 @@ export function RecipesPage() {
           }`}
           onClick={() => setActiveCategory("all")}
         >
-          All
+          Alles
         </button>
         {recipeCategories.map((category) => {
           const label = recipeCategoryLabels[category];
@@ -140,11 +140,13 @@ export function RecipesPage() {
       {error && <p className="alert alert--error">{error}</p>}
 
       {filtered.length === 0 && recipes !== null && (
-        <p className="recipes-empty">No recipes match your search.</p>
+        <p className="recipes-empty">
+          Geen recepten gevonden voor je zoekopdracht.
+        </p>
       )}
 
       {recipes === null ? (
-        <p className="loading-state">Loading recipes…</p>
+        <p className="loading-state">Recepten laden…</p>
       ) : (
         <div className="recipes-grid">
           {filtered.map((recipe) => (

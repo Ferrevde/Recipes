@@ -9,7 +9,10 @@ import {
 import { Link, useNavigate, useParams } from "react-router-dom";
 import { useEffect, useState } from "react";
 import type { Recipe } from "../../shared/recipe";
-import { recipeDifficultyLabel } from "../../shared/recipe";
+import {
+  recipeCategoryLabel,
+  recipeDifficultyLabel,
+} from "../../shared/recipe";
 import { recipesApi } from "../features/recipes/recipeApi";
 import {
   formatDuration,
@@ -37,7 +40,7 @@ export function RecipeDetailPage() {
       .byId(recipeId ?? "")
       .then(setRecipe)
       .catch((reason: unknown) =>
-        setError(reason instanceof Error ? reason.message : "Failed to load."),
+        setError(reason instanceof Error ? reason.message : "Laden mislukt."),
       );
   }, [recipeId]);
 
@@ -52,7 +55,7 @@ export function RecipeDetailPage() {
   }, [recipe]);
 
   async function deleteCurrentRecipe() {
-    if (!recipe || !window.confirm(`Delete “${recipe.title}”?`)) {
+    if (!recipe || !window.confirm(`“${recipe.title}” verwijderen?`)) {
       return;
     }
     try {
@@ -60,7 +63,9 @@ export function RecipeDetailPage() {
       navigate("/recipes");
     } catch (reason) {
       setError(
-        reason instanceof Error ? reason.message : "Could not delete recipe.",
+        reason instanceof Error
+          ? reason.message
+          : "Het recept kon niet worden verwijderd.",
       );
     }
   }
@@ -82,30 +87,31 @@ export function RecipeDetailPage() {
       <Link
         className="back-link"
         to="/recipes"
-        aria-label="Back to all recipes"
+        aria-label="Terug naar alle recepten"
         onClick={(event) => {
           event.preventDefault();
           navigate("/recipes");
         }}
       >
         <ArrowLeft size={18} aria-hidden="true" />
-        All recipes
+        Alle recepten
       </Link>
 
       {error && <p className="alert alert--error">{error}</p>}
 
       {recipe === null && !error ? (
-        <p className="loading-state">Loading recipe…</p>
+        <p className="loading-state">Recept laden…</p>
       ) : recipe === null ? (
         <p className="recipe-detail__not-found">
-          This recipe could not be found.
+          Dit recept kon niet worden gevonden.
         </p>
       ) : (
         <>
           <header className="recipe-detail__header">
             <div>
               <p className="eyebrow">
-                {recipe.category} · {recipeDifficultyLabel(recipe.difficulty)}
+                {recipeCategoryLabel(recipe.category)} ·{" "}
+                {recipeDifficultyLabel(recipe.difficulty)}
               </p>
               <h1>{recipe.title}</h1>
             </div>
@@ -116,10 +122,10 @@ export function RecipeDetailPage() {
                   <Link
                     className="recipe-detail__action"
                     to={`/recipes/${recipe.id}/edit`}
-                    aria-label="Edit recipe"
+                    aria-label="Recept bewerken"
                   >
                     <Pencil size={18} aria-hidden="true" />
-                    Edit
+                    Bewerken
                   </Link>
                   <button
                     type="button"
@@ -127,7 +133,7 @@ export function RecipeDetailPage() {
                     onClick={deleteCurrentRecipe}
                   >
                     <Trash2 size={18} aria-hidden="true" />
-                    Delete
+                    Verwijderen
                   </button>
                 </>
               )}
@@ -136,8 +142,8 @@ export function RecipeDetailPage() {
                 className="recipe-detail__favorite"
                 aria-label={
                   favoriteIds.includes(recipe.id)
-                    ? "Remove from saved"
-                    : "Save recipe"
+                    ? "Verwijder uit bewaard"
+                    : "Bewaar recept"
                 }
                 aria-pressed={favoriteIds.includes(recipe.id)}
                 onClick={() => {
@@ -167,7 +173,7 @@ export function RecipeDetailPage() {
             <div className="recipe-metrics__item">
               <Clock aria-hidden="true" size={16} strokeWidth={2} />
               <div>
-                <dt>Total time</dt>
+                <dt>Totale tijd</dt>
                 <dd>
                   {formatDuration(recipe.prepMinutes + recipe.cookMinutes)}
                 </dd>
@@ -176,7 +182,7 @@ export function RecipeDetailPage() {
             <div className="recipe-metrics__item">
               <Clock aria-hidden="true" size={16} strokeWidth={2} />
               <div>
-                <dt>Prep / cook</dt>
+                <dt>Voorbereiding / bereiding</dt>
                 <dd>
                   {formatTimeParts(recipe.prepMinutes, recipe.cookMinutes).prep}
                   {formatTimeParts(recipe.prepMinutes, recipe.cookMinutes).cook}
@@ -186,7 +192,7 @@ export function RecipeDetailPage() {
             <div className="recipe-metrics__item">
               <Users aria-hidden="true" size={16} strokeWidth={2} />
               <div>
-                <dt>Servings</dt>
+                <dt>Porties</dt>
                 <dd>{formatServings(recipe.servings)}</dd>
               </div>
             </div>
@@ -194,7 +200,7 @@ export function RecipeDetailPage() {
 
           <div className="recipe-detail__body">
             <section className="recipe-section">
-              <h2>Ingredients</h2>
+              <h2>Ingrediënten</h2>
               <ul className="recipe-ingredients">
                 {recipe.ingredients.map((ingredient, index) => (
                   <li
@@ -206,7 +212,7 @@ export function RecipeDetailPage() {
                     <button
                       type="button"
                       className="recipe-ingredient__check"
-                      aria-label={`Mark ${ingredient.title} as used`}
+                      aria-label={`Markeer ${ingredient.title} als gebruikt`}
                       aria-pressed={checkedIngredients.has(index)}
                       onClick={() => toggleIngredient(index)}
                     >
@@ -228,7 +234,7 @@ export function RecipeDetailPage() {
             </section>
 
             <section className="recipe-section">
-              <h2>Steps</h2>
+              <h2>Stappen</h2>
               <ol className="recipe-steps">
                 {recipe.steps.map((step, index) => (
                   <li key={index} className="recipe-step">

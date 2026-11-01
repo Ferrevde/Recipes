@@ -14,7 +14,7 @@ function makeRecipe(overrides: Partial<Recipe> = {}): Recipe {
     cookMinutes: 15,
     servings: 2,
     difficulty: "Medium",
-    summary: "A quick, delicious test recipe.",
+    summary: "Een snel en heerlijk testrecept.",
     ingredients: [{ title: "Onion", amount: "1", unit: "" }],
     steps: ["Step one.", "Step two."],
     tags: ["quick", "easy"],
@@ -49,9 +49,9 @@ function renderCard(
 describe("RecipeCard", () => {
   it("shows the category, time, and servings", () => {
     renderCard(makeRecipe());
-    expect(screen.getByText("Dinner")).toBeInTheDocument();
+    expect(screen.getByText("Diner")).toBeInTheDocument();
     expect(screen.getByText("25 min")).toBeInTheDocument();
-    expect(screen.getByText("2 serves")).toBeInTheDocument();
+    expect(screen.getByText("2 porties")).toBeInTheDocument();
   });
 
   it("invokes the open handler when the body is clicked", () => {
@@ -64,10 +64,10 @@ describe("RecipeCard", () => {
   it("toggles the favorite state without navigating", () => {
     const onToggleFavorite = vi.fn();
     renderCard(makeRecipe(), false, onToggleFavorite);
-    screen.getByRole("button", { name: /save recipe/i }).click();
+    screen.getByRole("button", { name: /bewaar recept/i }).click();
     expect(onToggleFavorite).toHaveBeenCalledWith("test-recipe");
     expect(
-      screen.getByRole("button", { name: /save recipe/i }),
+      screen.getByRole("button", { name: /bewaar recept/i }),
     ).toHaveAttribute("aria-pressed", "false");
   });
 

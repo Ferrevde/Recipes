@@ -31,17 +31,17 @@ export interface Recipe {
 }
 
 const CATEGORY_LABELS: Record<RecipeCategory, string> = {
-  breakfast: "Breakfast",
+  breakfast: "Ontbijt",
   lunch: "Lunch",
-  dinner: "Dinner",
+  dinner: "Diner",
   dessert: "Dessert",
-  snack: "Snack",
+  snack: "Tussendoor",
 };
 
 const DIFFICULTY_LABELS: Record<RecipeDifficulty, string> = {
-  Easy: "Easy",
-  Medium: "Medium",
-  Advanced: "Advanced",
+  Easy: "Makkelijk",
+  Medium: "Gemiddeld",
+  Advanced: "Gevorderd",
 };
 
 export const recipeCategories: RecipeCategory[] = [

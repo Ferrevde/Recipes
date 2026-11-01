@@ -6,15 +6,15 @@ export function NotFoundPage() {
   return (
     <div className="not-found">
       <PageHeader
-        eyebrow="Not here"
-        title="Page not found"
-        description="This recipe or section doesn’t exist. Head back to the
-          collection to keep cooking."
+        eyebrow="Niet gevonden"
+        title="Pagina niet gevonden"
+        description="Dit recept of onderdeel bestaat niet. Ga terug naar de
+          verzameling om verder te koken."
       />
       <EmptyState
         icon={UtensilsCrossed}
-        title="Nothing to see here"
-        description="Try the Recipes, Categories, or Saved pages."
+        title="Hier is niets te zien"
+        description="Probeer de pagina's Recepten, Categorieën of Bewaard."
       />
     </div>
   );

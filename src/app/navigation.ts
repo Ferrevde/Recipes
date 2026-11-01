@@ -13,8 +13,8 @@ export interface NavigationItem {
 }
 
 export const navigationItems: NavigationItem[] = [
-  { label: "Dashboard", path: "/", icon: Gauge },
-  { label: "Recipes", path: "/recipes", icon: BookOpen },
-  { label: "Categories", path: "/categories", icon: ListFilter },
-  { label: "Saved", path: "/saved", icon: Bookmark },
+  { label: "Overzicht", path: "/", icon: Gauge },
+  { label: "Recepten", path: "/recipes", icon: BookOpen },
+  { label: "Categorieën", path: "/categories", icon: ListFilter },
+  { label: "Bewaard", path: "/saved", icon: Bookmark },
 ];

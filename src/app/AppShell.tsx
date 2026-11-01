@@ -4,13 +4,13 @@ import { navigationItems } from "./navigation";
 
 function Brand() {
   return (
-    <div className="brand" aria-label="Recipe Book">
+    <div className="brand" aria-label="Receptenboek">
       <span className="brand__mark" aria-hidden="true">
         <ChefHat size={22} strokeWidth={2.4} />
       </span>
       <span>
-        <strong>Recipe Book</strong>
-        <small>Personal recipe collection</small>
+        <strong>Receptenboek</strong>
+        <small>Persoonlijke receptenverzameling</small>
       </span>
     </div>
   );
@@ -20,7 +20,7 @@ function Navigation({ variant }: { variant: "sidebar" | "bottom" }) {
   return (
     <nav
       className={`navigation navigation--${variant}`}
-      aria-label="Primary navigation"
+      aria-label="Hoofdnavigatie"
     >
       {navigationItems.map(({ label, path, icon: Icon }) => (
         <NavLink
@@ -43,7 +43,7 @@ function Navigation({ variant }: { variant: "sidebar" | "bottom" }) {
 function ProfileLink({ compact = false }: { compact?: boolean }) {
   return (
     <NavLink
-      aria-label="Profile & Preferences"
+      aria-label="Profiel en voorkeuren"
       className={({ isActive }) =>
         compact
           ? `mobile-profile-link${isActive ? " is-active" : ""}`
@@ -52,7 +52,7 @@ function ProfileLink({ compact = false }: { compact?: boolean }) {
       to="/profile"
     >
       <BookOpen aria-hidden="true" size={20} strokeWidth={2} />
-      {!compact && <span>Profile</span>}
+      {!compact && <span>Profiel</span>}
     </NavLink>
   );
 }
@@ -73,8 +73,8 @@ export function AppShell() {
         <div className="sidebar__status">
           <span className="status-dot" aria-hidden="true" />
           <div>
-            <strong>{navigationItems.length} categories ready</strong>
-            <span>Ready to cook. Add your own recipes anytime.</span>
+            <strong>{navigationItems.length} categorieën klaar</strong>
+            <span>Klaar om te koken. Voeg altijd je eigen recepten toe.</span>
           </div>
         </div>
         <ProfileLink />
@@ -94,12 +94,12 @@ export function AppShell() {
         <button
           className="add-button"
           type="button"
-          aria-label="Add a recipe"
-          title="Add a recipe"
+          aria-label="Recept toevoegen"
+          title="Recept toevoegen"
           onClick={() => navigate("/recipes/new")}
         >
           <BookOpen aria-hidden="true" size={22} />
-          <span>Add</span>
+          <span>Toevoegen</span>
         </button>
       )}
 

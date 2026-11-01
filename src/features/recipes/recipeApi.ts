@@ -11,11 +11,11 @@ function remoteUrl(path: string): string {
 
 async function readRecipeResponse(response: Response): Promise<Recipe[]> {
   if (!response.ok) {
-    throw new Error(`Recipe service returned ${response.status}.`);
+    throw new Error(`De receptenservice gaf ${response.status}.`);
   }
   const body: unknown = await response.json();
   if (!Array.isArray(body)) {
-    throw new Error("Recipe service returned an invalid response.");
+    throw new Error("De receptenservice gaf an invalid response.");
   }
   return body
     .map(validateRecipe)
@@ -41,7 +41,7 @@ async function storedRecipe(id: string): Promise<Recipe | null> {
     return null;
   }
   if (!response.ok) {
-    throw new Error(`Recipe service returned ${response.status}.`);
+    throw new Error(`De receptenservice gaf ${response.status}.`);
   }
   return validateRecipe(await response.json());
 }
@@ -86,7 +86,7 @@ export const recipesApi = {
 
   async remove(id: string): Promise<void> {
     if (!API_BASE) {
-      throw new Error("Recipe storage is not configured for this environment.");
+      throw new Error("Receptenopslag is niet ingesteld voor deze omgeving.");
     }
     const response = await fetch(
       remoteUrl(`/api/recipes/${encodeURIComponent(id)}`),
@@ -95,7 +95,7 @@ export const recipesApi = {
       },
     );
     if (!response.ok) {
-      throw new Error(`Recipe service returned ${response.status}.`);
+      throw new Error(`De receptenservice gaf ${response.status}.`);
     }
   },
 };
@@ -106,7 +106,7 @@ async function sendRecipe(
   input: RecipeInput,
 ): Promise<Recipe> {
   if (!API_BASE) {
-    throw new Error("Recipe storage is not configured for this environment.");
+    throw new Error("Receptenopslag is niet ingesteld voor deze omgeving.");
   }
   const response = await fetch(remoteUrl(path), {
     body: JSON.stringify(input),
@@ -118,12 +118,12 @@ async function sendRecipe(
     const message =
       body && typeof body === "object" && "error" in body
         ? String(body.error)
-        : `Recipe service returned ${response.status}.`;
+        : `De receptenservice gaf ${response.status}.`;
     throw new Error(message);
   }
   const recipe = validateRecipe(await response.json());
   if (!recipe) {
-    throw new Error("Recipe service returned an invalid recipe.");
+    throw new Error("De receptenservice gaf an invalid recipe.");
   }
   return recipe;
 }

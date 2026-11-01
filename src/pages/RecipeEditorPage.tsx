@@ -5,6 +5,7 @@ import {
   recipeCategories,
   recipeCategoryLabels,
   recipeDifficulties,
+  recipeDifficultyLabels,
   type RecipeCategory,
   type RecipeDifficulty,
   type RecipeIngredient,
@@ -51,7 +52,9 @@ export function RecipeEditorPage() {
       .storedById(recipeId)
       .then((recipe) => {
         if (!recipe) {
-          setError("Only recipes stored in D1 can be edited.");
+          setError(
+            "Alleen recepten die in D1 zijn opgeslagen kunnen worden bewerkt.",
+          );
           return;
         }
         setTitle(recipe.title);
@@ -69,7 +72,9 @@ export function RecipeEditorPage() {
       })
       .catch((reason: unknown) =>
         setError(
-          reason instanceof Error ? reason.message : "Could not load recipe.",
+          reason instanceof Error
+            ? reason.message
+            : "Het recept kon niet worden geladen.",
         ),
       )
       .finally(() => setIsLoading(false));
@@ -121,7 +126,9 @@ export function RecipeEditorPage() {
       navigate(`/recipes/${saved.id}`);
     } catch (reason) {
       setError(
-        reason instanceof Error ? reason.message : "Could not save recipe.",
+        reason instanceof Error
+          ? reason.message
+          : "Het recept kon niet worden opgeslagen.",
       );
     } finally {
       setIsSaving(false);
@@ -132,15 +139,15 @@ export function RecipeEditorPage() {
     <div className="recipe-editor">
       <Link className="back-link" to="/recipes">
         <ArrowLeft size={18} aria-hidden="true" />
-        All recipes
+        Alle recepten
       </Link>
       <PageHeader
-        eyebrow="Your collection"
-        title={isEditing ? "Edit recipe" : "Add a recipe"}
+        eyebrow="Jouw verzameling"
+        title={isEditing ? "Recept bewerken" : "Recept toevoegen"}
         description={
           isEditing
-            ? "Update this recipe in your Cloudflare D1 collection."
-            : "Save a recipe to your Cloudflare D1 collection."
+            ? "Werk dit recept bij in je Cloudflare D1-verzameling."
+            : "Sla een recept op in je Cloudflare D1-verzameling."
         }
       />
 
@@ -151,7 +158,7 @@ export function RecipeEditorPage() {
 
           <div className="recipe-editor__grid">
             <label>
-              Recipe name
+              Naam van het recept
               <input
                 required
                 maxLength={120}
@@ -160,7 +167,7 @@ export function RecipeEditorPage() {
               />
             </label>
             <label>
-              Category
+              Categorie
               <select
                 value={category}
                 onChange={(event) =>
@@ -175,7 +182,7 @@ export function RecipeEditorPage() {
               </select>
             </label>
             <label>
-              Difficulty
+              Moeilijkheid
               <select
                 value={difficulty}
                 onChange={(event) =>
@@ -183,12 +190,14 @@ export function RecipeEditorPage() {
                 }
               >
                 {recipeDifficulties.map((item) => (
-                  <option key={item}>{item}</option>
+                  <option key={item} value={item}>
+                    {recipeDifficultyLabels[item]}
+                  </option>
                 ))}
               </select>
             </label>
             <label>
-              Servings
+              Porties
               <input
                 required
                 min="1"
@@ -198,7 +207,7 @@ export function RecipeEditorPage() {
               />
             </label>
             <label>
-              Prep minutes
+              Voorbereiding (minuten)
               <input
                 required
                 min="0"
@@ -208,7 +217,7 @@ export function RecipeEditorPage() {
               />
             </label>
             <label>
-              Cook minutes
+              Bereiding (minuten)
               <input
                 required
                 min="0"
@@ -220,7 +229,7 @@ export function RecipeEditorPage() {
           </div>
 
           <label>
-            Short description
+            Korte beschrijving
             <textarea
               required
               maxLength={300}
@@ -231,13 +240,13 @@ export function RecipeEditorPage() {
           </label>
 
           <fieldset>
-            <legend>Ingredients</legend>
+            <legend>Ingrediënten</legend>
             <div className="recipe-editor__rows">
               {ingredients.map((ingredient) => (
                 <div className="recipe-editor__row" key={ingredient.key}>
                   <input
-                    aria-label="Amount"
-                    placeholder="Amount"
+                    aria-label="Hoeveelheid"
+                    placeholder="Hoeveelheid"
                     value={ingredient.amount}
                     onChange={(event) =>
                       updateIngredient(
@@ -248,8 +257,8 @@ export function RecipeEditorPage() {
                     }
                   />
                   <input
-                    aria-label="Unit"
-                    placeholder="Unit"
+                    aria-label="Eenheid"
+                    placeholder="Eenheid"
                     value={ingredient.unit}
                     onChange={(event) =>
                       updateIngredient(
@@ -260,8 +269,8 @@ export function RecipeEditorPage() {
                     }
                   />
                   <input
-                    aria-label="Ingredient"
-                    placeholder="Ingredient"
+                    aria-label="Ingrediënt"
+                    placeholder="Ingrediënt"
                     required
                     value={ingredient.title}
                     onChange={(event) =>
@@ -275,7 +284,7 @@ export function RecipeEditorPage() {
                   <button
                     type="button"
                     className="recipe-editor__remove"
-                    aria-label="Remove ingredient"
+                    aria-label="Ingrediënt verwijderen"
                     disabled={ingredients.length === 1}
                     onClick={() =>
                       setIngredients((current) =>
@@ -298,12 +307,12 @@ export function RecipeEditorPage() {
                 ])
               }
             >
-              <Plus size={16} aria-hidden="true" /> Add ingredient
+              <Plus size={16} aria-hidden="true" /> Ingrediënt toevoegen
             </button>
           </fieldset>
 
           <fieldset>
-            <legend>Steps</legend>
+            <legend>Stappen</legend>
             <div className="recipe-editor__rows">
               {steps.map((step, index) => (
                 <div
@@ -323,7 +332,7 @@ export function RecipeEditorPage() {
                   <button
                     type="button"
                     className="recipe-editor__remove"
-                    aria-label="Remove step"
+                    aria-label="Stap verwijderen"
                     disabled={steps.length === 1}
                     onClick={() =>
                       setSteps((current) =>
@@ -341,7 +350,7 @@ export function RecipeEditorPage() {
               className="button button--secondary"
               onClick={() => setSteps((current) => [...current, ""])}
             >
-              <Plus size={16} aria-hidden="true" /> Add step
+              <Plus size={16} aria-hidden="true" /> Stap toevoegen
             </button>
           </fieldset>
 
@@ -352,12 +361,12 @@ export function RecipeEditorPage() {
               value={tags}
               onChange={(event) => setTags(event.target.value)}
             />
-            <small>Separate tags with commas.</small>
+            <small>Scheid tags met komma's.</small>
           </label>
 
           <div className="recipe-editor__actions">
             <Link className="button button--secondary" to="/recipes">
-              Cancel
+              Annuleren
             </Link>
             <button
               className="button button--primary"
@@ -365,7 +374,7 @@ export function RecipeEditorPage() {
               disabled={isSaving}
             >
               <Save size={17} aria-hidden="true" />{" "}
-              {isSaving ? "Saving…" : "Save recipe"}
+              {isSaving ? "Opslaan…" : "Recept opslaan"}
             </button>
           </div>
         </form>

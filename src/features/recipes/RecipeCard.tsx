@@ -23,7 +23,7 @@ export function RecipeCard({
       <button
         type="button"
         className="recipe-card__favorite"
-        aria-label={isFavorite ? "Remove from saved" : "Save recipe"}
+        aria-label={isFavorite ? "Verwijder uit bewaard" : "Bewaar recept"}
         aria-pressed={isFavorite}
         onClick={() => onToggleFavorite(recipe.id)}
       >
@@ -44,9 +44,9 @@ export function RecipeCard({
             {recipeCategoryLabel(recipe.category)}
           </span>
           <span className="recipe-card__metrics">
-            <span title="Total time">{formatTotalTime(recipe)}</span>
-            <span title="Servings">
-              {formatServings(recipe.servings, "serves")}
+            <span title="Totale tijd">{formatTotalTime(recipe)}</span>
+            <span title="Porties">
+              {formatServings(recipe.servings, "porties")}
             </span>
           </span>
         </header>

@@ -16,7 +16,7 @@ export function CategoriesPage() {
       .list()
       .then(setRecipes)
       .catch((reason: unknown) =>
-        setError(reason instanceof Error ? reason.message : "Failed to load."),
+        setError(reason instanceof Error ? reason.message : "Laden mislukt."),
       );
   }, []);
 
@@ -25,19 +25,19 @@ export function CategoriesPage() {
       <Link
         className="back-link"
         to="/recipes"
-        aria-label="Back to all recipes"
+        aria-label="Terug naar alle recepten"
       >
-        Back to all recipes
+        Terug naar alle recepten
       </Link>
 
-      <h1 className="categories-page__title">Categories</h1>
+      <h1 className="categories-page__title">Categorieën</h1>
 
       {error && <p className="alert alert--error">{error}</p>}
 
       {recipes === null ? (
-        <p className="loading-state">Loading recipes…</p>
+        <p className="loading-state">Recepten laden…</p>
       ) : recipes.length === 0 ? (
-        <p className="loading-state">No recipes yet.</p>
+        <p className="loading-state">Nog geen recepten.</p>
       ) : (
         <div className="categories">
           {recipeCategories.map((category) => {
@@ -57,7 +57,9 @@ export function CategoriesPage() {
                     {label}
                     <span className="category__count">{items.length}</span>
                   </h2>
-                  <Link to={`/recipes?category=${category}`}>View recipes</Link>
+                  <Link to={`/recipes?category=${category}`}>
+                    Bekijk recepten
+                  </Link>
                 </header>
 
                 <div className="categories-grid">
