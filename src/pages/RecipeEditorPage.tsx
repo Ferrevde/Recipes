@@ -42,7 +42,9 @@ export function RecipeEditorPage() {
   const [steps, setSteps] = useState([""]);
   const [tags, setTags] = useState("");
   const [importUrl, setImportUrl] = useState("");
+  const [imageFile, setImageFile] = useState<File | null>(null);
   const [isImporting, setIsImporting] = useState(false);
+  const [isImageImporting, setIsImageImporting] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [isSaving, setIsSaving] = useState(false);
   const [isLoading, setIsLoading] = useState(isEditing);
@@ -68,6 +70,22 @@ export function RecipeEditorPage() {
     );
     setSteps(recipe.steps);
     setTags(recipe.tags.join(", "));
+  }
+
+  async function importFromImage() {
+    if (!imageFile) return;
+    setError(null);
+    setIsImageImporting(true);
+    try {
+      applyRecipeInput(await recipesApi.importFromImage(imageFile));
+      setImageFile(null);
+    } catch (reason) {
+      setError(
+        reason instanceof Error ? reason.message : "Importeren mislukt.",
+      );
+    } finally {
+      setIsImageImporting(false);
+    }
   }
 
   async function importFromWebsite() {
@@ -218,6 +236,29 @@ export function RecipeEditorPage() {
               De gevonden gegevens worden naar het Nederlands vertaald en
               blijven eerst bewerkbaar.
             </small>
+            <div className="recipe-editor__image-import">
+              <label htmlFor="recipe-screenshot">
+                Of importeer een screenshot
+                <input
+                  id="recipe-screenshot"
+                  accept="image/*"
+                  type="file"
+                  onChange={(event) =>
+                    setImageFile(event.target.files?.[0] ?? null)
+                  }
+                />
+              </label>
+              <button
+                className="button button--secondary"
+                type="button"
+                disabled={isImageImporting || imageFile === null}
+                onClick={() => void importFromImage()}
+              >
+                {isImageImporting
+                  ? "Screenshot lezen…"
+                  : "Importeer screenshot"}
+              </button>
+            </div>
           </div>
           {error && <p className="alert alert--error">{error}</p>}
 

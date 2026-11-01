@@ -22,6 +22,43 @@ interface AiResult {
   response?: unknown;
 }
 
+export async function importRecipeFromImage(
+  image: File,
+  ai: Ai,
+): Promise<RecipeInput> {
+  if (!image.type.startsWith("image/")) {
+    throw new Error("Upload een geldige afbeelding.");
+  }
+  if (image.size > 8 * 1024 * 1024) {
+    throw new Error("De afbeelding mag maximaal 8 MB groot zijn.");
+  }
+
+  const result: unknown = await ai.run("@cf/llava-hf/llava-1.5-7b-hf", {
+    image: Array.from(new Uint8Array(await image.arrayBuffer())),
+    max_tokens: 2048,
+    prompt:
+      "Lees deze Nederlandse receptenafbeelding. Geef uitsluitend geldige JSON terug met exact deze velden: title, summary, ingredients (array met amount, unit, title), steps (array strings), tags (array strings), category (breakfast, lunch, dinner, dessert of snack), prepMinutes (getal), cookMinutes (getal), servings (getal), difficulty (Easy, Medium of Advanced). Vertaal alle herkende tekst naar natuurlijk Nederlands. Behoud hoeveelheden exact. Als informatie ontbreekt, gebruik een lege tekst of 0.",
+  });
+  const text = aiText(result);
+  const parsed = parseJson(text);
+  if (!parsed || typeof parsed !== "object") {
+    throw new Error(
+      "De afbeelding kon niet als recept worden gelezen. Gebruik een scherpere screenshot.",
+    );
+  }
+  const recipe = validateRecipe({
+    id: "image-preview",
+    ...(parsed as Record<string, unknown>),
+  });
+  if (!recipe) {
+    throw new Error(
+      "Niet alle receptgegevens konden uit de afbeelding worden gehaald. Controleer de screenshot.",
+    );
+  }
+  const { id: _id, ...input } = recipe;
+  return input;
+}
+
 export async function importRecipeFromUrl(
   sourceUrl: string,
   ai: Ai,
@@ -285,6 +322,16 @@ function decodeEntities(value: string): string {
     .replace(/&lt;/g, "<")
     .replace(/&gt;/g, ">")
     .replace(/&nbsp;/g, " ");
+}
+
+function aiText(result: unknown): string {
+  if (typeof result === "string") return result;
+  if (result && typeof result === "object") {
+    const value = result as Record<string, unknown>;
+    if (typeof value.description === "string") return value.description;
+    if (typeof value.response === "string") return value.response;
+  }
+  return "";
 }
 
 function parseJson(value: string): unknown {

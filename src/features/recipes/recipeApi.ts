@@ -104,6 +104,35 @@ export const recipesApi = {
     return input;
   },
 
+  async importFromImage(image: File): Promise<RecipeInput> {
+    if (!API_BASE) {
+      throw new Error("Receptenopslag is niet ingesteld voor deze omgeving.");
+    }
+    const form = new FormData();
+    form.set("image", image);
+    const response = await fetch(remoteUrl("/api/import-image"), {
+      body: form,
+      method: "POST",
+    });
+    if (!response.ok) {
+      const body: unknown = await response.json().catch(() => null);
+      const message =
+        body && typeof body === "object" && "error" in body
+          ? String(body.error)
+          : "De screenshot kon niet worden geïmporteerd.";
+      throw new Error(message);
+    }
+    const recipe = validateRecipe({
+      id: "image-preview",
+      ...(await response.json()),
+    });
+    if (!recipe) {
+      throw new Error("De screenshot gaf geen geldig recept terug.");
+    }
+    const { id: _id, ...input } = recipe;
+    return input;
+  },
+
   async create(input: RecipeInput): Promise<Recipe> {
     return sendRecipe("POST", "/api/recipes", input);
   },

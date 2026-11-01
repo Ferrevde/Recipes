@@ -1,5 +1,5 @@
 import type { Recipe } from "../../shared/recipe";
-import { importRecipeFromUrl } from "./recipeImport";
+import { importRecipeFromImage, importRecipeFromUrl } from "./recipeImport";
 import {
   recipeCategories,
   recipeDifficulties,
@@ -62,6 +62,30 @@ function recipeFromRow(row: RecipeRow): Recipe | null {
 function isValidRecipeInput(input: unknown): input is Recipe {
   const recipe = validateRecipe(input);
   return recipe !== null;
+}
+
+async function importRecipeImage(
+  request: Request,
+  env: Env,
+): Promise<Response> {
+  let form: FormData;
+  try {
+    form = await request.formData();
+  } catch {
+    return json({ error: "Het afbeeldingsformulier is ongeldig." }, 400);
+  }
+  const value = form.get("image");
+  if (!(value instanceof File)) {
+    return json({ error: "Kies eerst een afbeelding." }, 400);
+  }
+  try {
+    return json(await importRecipeFromImage(value, env.AI));
+  } catch (error) {
+    return json(
+      { error: error instanceof Error ? error.message : "Importeren mislukt." },
+      422,
+    );
+  }
 }
 
 async function importRecipe(request: Request, env: Env): Promise<Response> {
@@ -215,6 +239,9 @@ export default {
     try {
       if (path === "/api/import" && request.method === "POST") {
         return await importRecipe(request, env);
+      }
+      if (path === "/api/import-image" && request.method === "POST") {
+        return await importRecipeImage(request, env);
       }
       if (path === "/api/recipes" && request.method === "GET") {
         return await listRecipes(env);
