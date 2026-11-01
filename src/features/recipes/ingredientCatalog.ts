@@ -21,7 +21,7 @@ export const commonIngredients: CommonIngredient[] = [
   { name: "feta", plural: "feta" },
   { name: "gember", plural: "gember" },
   { name: "gehakt", plural: "gehakt" },
-  { name: "garnalen", plural: "garnalen" },
+  { name: "garnaal", plural: "garnalen" },
   { name: "knoflook", plural: "knoflook" },
   { name: "knoflookteen", plural: "knoflooktenen" },
   { name: "komkommer", plural: "komkommers" },
