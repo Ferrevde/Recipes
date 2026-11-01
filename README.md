@@ -30,7 +30,7 @@ npm run check
 
 ## Data model
 
-De ingebouwde catalogus blijft beschikbaar als basiscollectie. Zelfgemaakte recepten worden via `recipesApi` opgeslagen in Cloudflare D1. Screenshot-import gebruikt Gemini vanuit de Cloudflare Worker; de API-key staat als secret op de Worker en komt niet in de browser. Boundary-contracten en validatie staan in `shared/recipe.ts`.
+De catalogus start leeg. Recepten worden via `recipesApi` opgeslagen in Cloudflare D1. Screenshot-import gebruikt Gemini vanuit de Cloudflare Worker; de API-key staat als secret op de Worker en komt niet in de browser. Boundary-contracten en validatie staan in `shared/recipe.ts`.
 
 ## Project structure
 

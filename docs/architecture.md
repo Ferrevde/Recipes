@@ -13,7 +13,7 @@ Recipe Book is a frontend-only Vite application. The architecture mirrors Fitnes
 
 ## Data boundary
 
-`recipesApi` leest de vaste catalogus en voegt recepten uit de server-side D1-opslag toe. Componenten importeren de catalogus nooit rechtstreeks. Gemini wordt vanuit de Cloudflare Worker aangeroepen voor screenshot-import; de API-key blijft server-side.
+`recipesApi` leest de lege basiscatalogus en recepten uit de server-side D1-opslag. Componenten importeren de catalogus nooit rechtstreeks. Gemini wordt vanuit de Cloudflare Worker aangeroepen voor screenshot-import; de API-key blijft server-side.
 
 Favorieten zijn lokale browservoorkeuren. Nieuwe recepten worden aangemaakt op `/recipes/new` en opgeslagen via de Worker in D1.
 
