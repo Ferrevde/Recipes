@@ -35,7 +35,7 @@ export async function importRecipeFromImage(
 
   const result: unknown = await ai.run("@cf/llava-hf/llava-1.5-7b-hf", {
     image: Array.from(new Uint8Array(await image.arrayBuffer())),
-    max_tokens: 2048,
+    max_tokens: 1024,
     prompt:
       "Lees deze Nederlandse receptenafbeelding. Geef uitsluitend geldige JSON terug met exact deze velden: title, summary, ingredients (array met amount, unit, title), steps (array strings), tags (array strings), category (breakfast, lunch, dinner, dessert of snack), prepMinutes (getal), cookMinutes (getal), servings (getal), difficulty (Easy, Medium of Advanced). Vertaal alle herkende tekst naar natuurlijk Nederlands. Behoud hoeveelheden exact. Als informatie ontbreekt, gebruik een lege tekst of 0.",
   });
