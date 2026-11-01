@@ -1,5 +1,12 @@
-import { ArrowLeft, Bookmark, Clock, Users } from "lucide-react";
-import { Link, useNavigate } from "react-router-dom";
+import {
+  ArrowLeft,
+  Bookmark,
+  Clock,
+  Pencil,
+  Trash2,
+  Users,
+} from "lucide-react";
+import { Link, useNavigate, useParams } from "react-router-dom";
 import { useEffect, useState } from "react";
 import type { Recipe } from "../../shared/recipe";
 import { recipeDifficultyLabel } from "../../shared/recipe";
@@ -13,24 +20,50 @@ import { useLocalStorage } from "../lib/localStorage";
 
 export function RecipeDetailPage() {
   const navigate = useNavigate();
+  const { recipeId } = useParams();
   const [favoriteIds, setFavoriteIds] = useLocalStorage(
     "recipes.savedIds",
     [] as string[],
   );
   const [recipe, setRecipe] = useState<Recipe | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [canManage, setCanManage] = useState(false);
   const [checkedIngredients, setCheckedIngredients] = useState<Set<number>>(
     new Set(),
   );
 
   useEffect(() => {
     void recipesApi
-      .byId(window.location.pathname.split("/")[2] ?? "")
+      .byId(recipeId ?? "")
       .then(setRecipe)
       .catch((reason: unknown) =>
         setError(reason instanceof Error ? reason.message : "Failed to load."),
       );
-  }, []);
+  }, [recipeId]);
+
+  useEffect(() => {
+    if (!recipe) {
+      return;
+    }
+    void recipesApi
+      .storedById(recipe.id)
+      .then((stored) => setCanManage(stored !== null))
+      .catch(() => setCanManage(false));
+  }, [recipe]);
+
+  async function deleteCurrentRecipe() {
+    if (!recipe || !window.confirm(`Delete “${recipe.title}”?`)) {
+      return;
+    }
+    try {
+      await recipesApi.remove(recipe.id);
+      navigate("/recipes");
+    } catch (reason) {
+      setError(
+        reason instanceof Error ? reason.message : "Could not delete recipe.",
+      );
+    }
+  }
 
   function toggleIngredient(index: number) {
     setCheckedIngredients((current) => {
@@ -77,33 +110,55 @@ export function RecipeDetailPage() {
               <h1>{recipe.title}</h1>
             </div>
 
-            <button
-              type="button"
-              className="recipe-detail__favorite"
-              aria-label={
-                favoriteIds.includes(recipe.id)
-                  ? "Remove from saved"
-                  : "Save recipe"
-              }
-              aria-pressed={favoriteIds.includes(recipe.id)}
-              onClick={() => {
-                const isSaved = favoriteIds.includes(recipe.id);
-                const next = isSaved
-                  ? favoriteIds.filter((id) => id !== recipe.id)
-                  : [...favoriteIds, recipe.id];
-                setFavoriteIds(next);
-              }}
-            >
-              <Bookmark
-                size={20}
-                strokeWidth={2}
-                style={{
-                  color: favoriteIds.includes(recipe.id)
-                    ? "var(--recipe-color)"
-                    : "var(--color-text-muted)",
+            <div className="recipe-detail__actions">
+              {canManage && (
+                <>
+                  <Link
+                    className="recipe-detail__action"
+                    to={`/recipes/${recipe.id}/edit`}
+                    aria-label="Edit recipe"
+                  >
+                    <Pencil size={18} aria-hidden="true" />
+                    Edit
+                  </Link>
+                  <button
+                    type="button"
+                    className="recipe-detail__action recipe-detail__action--danger"
+                    onClick={deleteCurrentRecipe}
+                  >
+                    <Trash2 size={18} aria-hidden="true" />
+                    Delete
+                  </button>
+                </>
+              )}
+              <button
+                type="button"
+                className="recipe-detail__favorite"
+                aria-label={
+                  favoriteIds.includes(recipe.id)
+                    ? "Remove from saved"
+                    : "Save recipe"
+                }
+                aria-pressed={favoriteIds.includes(recipe.id)}
+                onClick={() => {
+                  const isSaved = favoriteIds.includes(recipe.id);
+                  const next = isSaved
+                    ? favoriteIds.filter((id) => id !== recipe.id)
+                    : [...favoriteIds, recipe.id];
+                  setFavoriteIds(next);
                 }}
-              />
-            </button>
+              >
+                <Bookmark
+                  size={20}
+                  strokeWidth={2}
+                  style={{
+                    color: favoriteIds.includes(recipe.id)
+                      ? "var(--recipe-color)"
+                      : "var(--color-text-muted)",
+                  }}
+                />
+              </button>
+            </div>
           </header>
 
           <p className="recipe-detail__summary">{recipe.summary}</p>

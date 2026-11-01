@@ -25,7 +25,7 @@ interface RecipeRow {
 
 const corsHeaders = {
   "Access-Control-Allow-Headers": "Content-Type",
-  "Access-Control-Allow-Methods": "GET, POST, OPTIONS",
+  "Access-Control-Allow-Methods": "GET, POST, PUT, DELETE, OPTIONS",
   "Access-Control-Allow-Origin": "*",
   "Content-Type": "application/json",
 };
@@ -80,6 +80,60 @@ async function getRecipe(id: string, env: Env): Promise<Response> {
     .first<RecipeRow>();
   const recipe = row ? recipeFromRow(row) : null;
   return recipe ? json(recipe) : json({ error: "Recipe not found." }, 404);
+}
+
+async function updateRecipe(
+  id: string,
+  request: Request,
+  env: Env,
+): Promise<Response> {
+  let body: unknown;
+  try {
+    body = await request.json();
+  } catch {
+    return json({ error: "Request body must be valid JSON." }, 400);
+  }
+
+  const input =
+    body && typeof body === "object"
+      ? { ...(body as Record<string, unknown>), id }
+      : null;
+  if (!isValidRecipeInput(input)) {
+    return json({ error: "The recipe data is invalid." }, 400);
+  }
+
+  const result = await env.DB.prepare(
+    `UPDATE recipes SET title = ?, category = ?, prep_minutes = ?, cook_minutes = ?,
+      servings = ?, difficulty = ?, summary = ?, ingredients_json = ?, steps_json = ?, tags_json = ?
+     WHERE id = ?`,
+  )
+    .bind(
+      input.title,
+      input.category,
+      input.prepMinutes,
+      input.cookMinutes,
+      input.servings,
+      input.difficulty,
+      input.summary,
+      JSON.stringify(input.ingredients),
+      JSON.stringify(input.steps),
+      JSON.stringify(input.tags),
+      id,
+    )
+    .run();
+
+  return result.meta.changes > 0
+    ? json(input)
+    : json({ error: "Recipe not found." }, 404);
+}
+
+async function deleteRecipe(id: string, env: Env): Promise<Response> {
+  const result = await env.DB.prepare("DELETE FROM recipes WHERE id = ?")
+    .bind(id)
+    .run();
+  return result.meta.changes > 0
+    ? new Response(null, { status: 204, headers: corsHeaders })
+    : json({ error: "Recipe not found." }, 404);
 }
 
 async function createRecipe(request: Request, env: Env): Promise<Response> {
@@ -142,11 +196,17 @@ export default {
       if (path === "/api/recipes" && request.method === "POST") {
         return await createRecipe(request, env);
       }
-      if (path.startsWith("/api/recipes/") && request.method === "GET") {
-        return await getRecipe(
-          decodeURIComponent(path.slice("/api/recipes/".length)),
-          env,
-        );
+      if (path.startsWith("/api/recipes/")) {
+        const id = decodeURIComponent(path.slice("/api/recipes/".length));
+        if (request.method === "GET") {
+          return await getRecipe(id, env);
+        }
+        if (request.method === "PUT") {
+          return await updateRecipe(id, request, env);
+        }
+        if (request.method === "DELETE") {
+          return await deleteRecipe(id, env);
+        }
       }
       return json({ error: "Not found." }, 404);
     } catch (error) {

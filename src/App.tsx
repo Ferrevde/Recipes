@@ -16,6 +16,7 @@ function App() {
         <Route index element={<DashboardPage />} />
         <Route path="recipes" element={<RecipesPage />} />
         <Route path="recipes/new" element={<RecipeEditorPage />} />
+        <Route path="recipes/:recipeId/edit" element={<RecipeEditorPage />} />
         <Route path="recipes/:recipeId" element={<RecipeDetailPage />} />
         <Route path="categories" element={<CategoriesPage />} />
         <Route path="saved" element={<SavedPage />} />
