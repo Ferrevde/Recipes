@@ -13,6 +13,7 @@ import {
   recipeCategoryLabel,
   recipeDifficultyLabel,
 } from "../../shared/recipe";
+import { formatIngredientAmount } from "../features/recipes/ingredientCatalog";
 import { recipesApi } from "../features/recipes/recipeApi";
 import {
   formatDuration,
@@ -226,7 +227,11 @@ export function RecipeDetailPage() {
                       />
                     </button>
                     <span className="recipe-ingredient__text">
-                      {ingredient.amount} {ingredient.unit} {ingredient.title}
+                      {formatIngredientAmount(
+                        ingredient.amount,
+                        ingredient.unit,
+                        ingredient.title,
+                      )}
                     </span>
                   </li>
                 ))}

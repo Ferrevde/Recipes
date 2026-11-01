@@ -10,6 +10,7 @@ import {
   type RecipeDifficulty,
   type RecipeIngredient,
 } from "../../shared/recipe";
+import { ingredientSuggestions } from "../features/recipes/ingredientCatalog";
 import { recipesApi, type RecipeInput } from "../features/recipes/recipeApi";
 import { PageHeader } from "../components/PageHeader";
 
@@ -43,6 +44,9 @@ export function RecipeEditorPage() {
   const [error, setError] = useState<string | null>(null);
   const [isSaving, setIsSaving] = useState(false);
   const [isLoading, setIsLoading] = useState(isEditing);
+  const [focusedIngredientKey, setFocusedIngredientKey] = useState<
+    number | null
+  >(null);
 
   useEffect(() => {
     if (!recipeId) {
@@ -65,7 +69,14 @@ export function RecipeEditorPage() {
         setServings(String(recipe.servings));
         setSummary(recipe.summary);
         setIngredients(
-          recipe.ingredients.map((ingredient, key) => ({ ...ingredient, key })),
+          recipe.ingredients.map((ingredient, key) => ({
+            amount: [ingredient.amount, ingredient.unit]
+              .filter(Boolean)
+              .join(" "),
+            key,
+            title: ingredient.title,
+            unit: "",
+          })),
         );
         setSteps(recipe.steps);
         setTags(recipe.tags.join(", "));
@@ -92,6 +103,11 @@ export function RecipeEditorPage() {
     );
   }
 
+  function chooseIngredient(key: number, name: string) {
+    updateIngredient(key, "title", name);
+    setFocusedIngredientKey(null);
+  }
+
   function updateStep(index: number, value: string) {
     setSteps((current) =>
       current.map((step, stepIndex) => (stepIndex === index ? value : step)),
@@ -108,7 +124,11 @@ export function RecipeEditorPage() {
         cookMinutes: Number(cookMinutes),
         difficulty,
         ingredients: ingredients.map(
-          ({ key: _key, ...ingredient }) => ingredient,
+          ({ key: _key, title: ingredientTitle, amount }) => ({
+            amount,
+            title: ingredientTitle,
+            unit: "",
+          }),
         ),
         prepMinutes: Number(prepMinutes),
         servings: Number(servings),
@@ -246,7 +266,7 @@ export function RecipeEditorPage() {
                 <div className="recipe-editor__row" key={ingredient.key}>
                   <input
                     aria-label="Hoeveelheid"
-                    placeholder="Hoeveelheid"
+                    placeholder="Bijv. 2 stuks"
                     value={ingredient.amount}
                     onChange={(event) =>
                       updateIngredient(
@@ -256,31 +276,57 @@ export function RecipeEditorPage() {
                       )
                     }
                   />
-                  <input
-                    aria-label="Eenheid"
-                    placeholder="Eenheid"
-                    value={ingredient.unit}
-                    onChange={(event) =>
-                      updateIngredient(
-                        ingredient.key,
-                        "unit",
-                        event.target.value,
-                      )
-                    }
-                  />
-                  <input
-                    aria-label="Ingrediënt"
-                    placeholder="Ingrediënt"
-                    required
-                    value={ingredient.title}
-                    onChange={(event) =>
-                      updateIngredient(
-                        ingredient.key,
-                        "title",
-                        event.target.value,
-                      )
-                    }
-                  />
+                  <div className="recipe-editor__ingredient-field">
+                    <input
+                      aria-label="Ingrediënt"
+                      autoComplete="off"
+                      placeholder="Ingrediënt"
+                      required
+                      value={ingredient.title}
+                      onBlur={() =>
+                        window.setTimeout(
+                          () => setFocusedIngredientKey(null),
+                          150,
+                        )
+                      }
+                      onChange={(event) => {
+                        updateIngredient(
+                          ingredient.key,
+                          "title",
+                          event.target.value,
+                        );
+                        setFocusedIngredientKey(ingredient.key);
+                      }}
+                      onFocus={() => setFocusedIngredientKey(ingredient.key)}
+                    />
+                    {focusedIngredientKey === ingredient.key &&
+                      ingredientSuggestions(ingredient.title).length > 0 && (
+                        <div
+                          className="recipe-editor__suggestions"
+                          role="listbox"
+                          aria-label="Ingrediëntsuggesties"
+                        >
+                          {ingredientSuggestions(ingredient.title).map(
+                            (suggestion) => (
+                              <button
+                                type="button"
+                                role="option"
+                                key={suggestion.name}
+                                onMouseDown={(event) => event.preventDefault()}
+                                onClick={() =>
+                                  chooseIngredient(
+                                    ingredient.key,
+                                    suggestion.name,
+                                  )
+                                }
+                              >
+                                {suggestion.name}
+                              </button>
+                            ),
+                          )}
+                        </div>
+                      )}
+                  </div>
                   <button
                     type="button"
                     className="recipe-editor__remove"
