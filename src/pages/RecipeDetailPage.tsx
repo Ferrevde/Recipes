@@ -160,7 +160,7 @@ export function RecipeDetailPage() {
                   strokeWidth={2}
                   style={{
                     color: favoriteIds.includes(recipe.id)
-                      ? "var(--recipe-color)"
+                      ? "var(--color-accent)"
                       : "var(--color-text-muted)",
                   }}
                 />

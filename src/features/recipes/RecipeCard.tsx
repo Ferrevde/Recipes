@@ -32,7 +32,7 @@ export function RecipeCard({
           strokeWidth={1.8}
           style={{
             color: isFavorite
-              ? "var(--recipe-color)"
+              ? "var(--color-accent)"
               : "var(--color-text-subtle)",
           }}
         />
