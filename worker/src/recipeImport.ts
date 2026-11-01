@@ -38,6 +38,14 @@ export async function importRecipeFromUrl(
   }
 
   const html = await response.text();
+  if (
+    /token\.roularta\.be|sso\.roularta\.be/i.test(response.url) ||
+    /<title>\s*inloggen\s*<\/title>/i.test(html)
+  ) {
+    throw new Error(
+      "Deze website vereist een persoonlijke login. Libelle Lekker stuurt de inhoud zonder jouw login door naar een inlogpagina. Openbare receptenpagina's kunnen wel worden geïmporteerd.",
+    );
+  }
   const source = findRecipe(html);
   if (!source) {
     throw new Error(
