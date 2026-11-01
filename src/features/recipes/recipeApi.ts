@@ -5,10 +5,10 @@ import { recipeCatalog } from "./recipeCatalog";
 const STORAGE_KEY = "recipes.customRecipes";
 const GEMINI_API_KEY = import.meta.env.VITE_GEMINI_API_KEY ?? "";
 const GEMINI_MODEL_FALLBACKS = [
-  "gemini-2.5-flash",
-  "gemini-2.5-flash-lite",
-  "gemini-2.0-flash",
-  "gemini-2.0-flash-lite",
+  "gemini-3.8-flash",
+  "gemini-3.6-flash",
+  "gemini-3.5-flash-lite",
+  "gemini-3.1-flash-lite",
 ] as const;
 const GEMINI_TIMEOUT_MS = 30_000;
 
