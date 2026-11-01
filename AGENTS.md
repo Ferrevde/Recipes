@@ -2,7 +2,7 @@
 
 ## Principles
 
-- Keep the app focused on browsing, searching, cooking, and saving recipes.
+- Keep the app focused on browsing, searching, cooking, saving, and adding recipes.
 - Prefer the simplest implementation that reduces complexity.
 - Preserve the `recipesApi` data-source boundary; do not import the catalog from UI code.
 - Keep shared contracts and explicit validators in `shared/`.
@@ -25,4 +25,4 @@ node scripts/gen-icons.mjs
 
 ## Adding recipe data
 
-Add validated entries in `src/features/recipes/recipeCatalog.ts`. Keep IDs stable, use one of the existing categories and difficulty values, and preserve the `Recipe` contract.
+The built-in collection lives in `src/features/recipes/recipeCatalog.ts`. User-created recipes go through `RecipeEditorPage` and the Worker API into D1. Keep IDs stable for built-in entries, use existing categories and difficulty values, and preserve the `Recipe` contract.

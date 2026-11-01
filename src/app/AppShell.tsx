@@ -1,5 +1,5 @@
 import { BookOpen, ChefHat } from "lucide-react";
-import { NavLink, Outlet, useLocation } from "react-router-dom";
+import { NavLink, Outlet, useLocation, useNavigate } from "react-router-dom";
 import { navigationItems } from "./navigation";
 
 function Brand() {
@@ -59,6 +59,7 @@ function ProfileLink({ compact = false }: { compact?: boolean }) {
 
 export function AppShell() {
   const location = useLocation();
+  const navigate = useNavigate();
   const hideAddButton =
     location.pathname === "/profile" ||
     location.pathname === "/categories" ||
@@ -94,8 +95,8 @@ export function AppShell() {
           className="add-button"
           type="button"
           aria-label="Add a recipe"
-          title="Add a recipe will be added in a future step"
-          disabled
+          title="Add a recipe"
+          onClick={() => navigate("/recipes/new")}
         >
           <BookOpen aria-hidden="true" size={22} />
           <span>Add</span>

@@ -20,6 +20,8 @@ npm install
 npm run dev
 ```
 
+The editor is available from the **Add** button. It sends validated recipes to the deployed Worker and D1 database.
+
 Run the full quality gate before committing:
 
 ```bash
@@ -28,7 +30,7 @@ npm run check
 
 ## Data model
 
-The catalog is intentionally static. UI code talks to `recipesApi`, so a future HTTP or Cloudflare Worker/D1 implementation can replace the source without changing page components. Boundary contracts and validation live in `shared/recipe.ts`.
+The built-in catalog remains available as a curated baseline, while user-created recipes are stored in Cloudflare D1 through the Worker API. UI code talks only to `recipesApi`, so the data source stays replaceable. Boundary contracts and validation live in `shared/recipe.ts`.
 
 ## Project structure
 
