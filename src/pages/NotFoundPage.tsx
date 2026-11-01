@@ -14,7 +14,7 @@ export function NotFoundPage() {
       <EmptyState
         icon={UtensilsCrossed}
         title="Hier is niets te zien"
-        description="Probeer de pagina's Recepten, Categorieën of Bewaard."
+        description="Probeer de pagina's Recepten of Bewaard."
       />
     </div>
   );

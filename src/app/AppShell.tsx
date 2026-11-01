@@ -61,9 +61,7 @@ export function AppShell() {
   const location = useLocation();
   const navigate = useNavigate();
   const hideAddButton =
-    location.pathname === "/profile" ||
-    location.pathname === "/categories" ||
-    location.pathname === "/saved";
+    location.pathname === "/profile" || location.pathname === "/saved";
 
   return (
     <div className="app-shell">
@@ -73,7 +71,7 @@ export function AppShell() {
         <div className="sidebar__status">
           <span className="status-dot" aria-hidden="true" />
           <div>
-            <strong>{navigationItems.length} categorieën klaar</strong>
+            <strong>Jouw receptenverzameling</strong>
             <span>Klaar om te koken. Voeg altijd je eigen recepten toe.</span>
           </div>
         </div>
