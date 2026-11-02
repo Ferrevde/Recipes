@@ -3,6 +3,7 @@ import { validateRecipe } from "../../../shared/recipe";
 import { recipeCatalog } from "./recipeCatalog";
 
 const API_BASE = (import.meta.env.VITE_API_BASE_URL ?? "").replace(/\/$/, "");
+const LEGACY_STORAGE_KEY = "recipes.customRecipes";
 export type RecipeInput = Omit<Recipe, "id">;
 
 function remoteUrl(path: string): string {
@@ -46,6 +47,7 @@ async function storedRecipe(id: string): Promise<Recipe | null> {
 export const recipesApi = {
   async list(): Promise<Recipe[]> {
     try {
+      await migrateLegacyRecipes();
       return mergeRecipes(
         await readRecipeResponse(await fetch(remoteUrl("/api/recipes"))),
       );
@@ -141,6 +143,31 @@ export const recipesApi = {
     }
   },
 };
+
+async function migrateLegacyRecipes(): Promise<void> {
+  const raw = window.localStorage.getItem(LEGACY_STORAGE_KEY);
+  if (!raw) return;
+  let legacyRecipes: Recipe[];
+  try {
+    const parsed: unknown = JSON.parse(raw);
+    legacyRecipes = Array.isArray(parsed)
+      ? parsed
+          .map(validateRecipe)
+          .filter((recipe): recipe is Recipe => recipe !== null)
+      : [];
+  } catch {
+    return;
+  }
+  if (legacyRecipes.length === 0) {
+    window.localStorage.removeItem(LEGACY_STORAGE_KEY);
+    return;
+  }
+  for (const recipe of legacyRecipes) {
+    const { id: _id, ...input } = recipe;
+    await sendRecipe("POST", "/api/recipes", input);
+  }
+  window.localStorage.removeItem(LEGACY_STORAGE_KEY);
+}
 
 async function sendRecipe(
   method: "POST" | "PUT",
