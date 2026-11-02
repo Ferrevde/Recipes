@@ -1,4 +1,4 @@
-import { ArrowLeft, Plus, Save, Trash2 } from "lucide-react";
+import { ArrowLeft, GripVertical, Plus, Save, Trash2 } from "lucide-react";
 import { useEffect, useState, type FormEvent } from "react";
 import { Link, useNavigate, useParams } from "react-router-dom";
 import {
@@ -40,6 +40,7 @@ export function RecipeEditorPage() {
     initialIngredient(1),
   ]);
   const [steps, setSteps] = useState([""]);
+  const [draggedStepIndex, setDraggedStepIndex] = useState<number | null>(null);
   const [tags, setTags] = useState("");
   const [importUrl, setImportUrl] = useState("");
   const [isImporting, setIsImporting] = useState(false);
@@ -449,9 +450,37 @@ export function RecipeEditorPage() {
             <div className="recipe-editor__rows">
               {steps.map((step, index) => (
                 <div
-                  className="recipe-editor__row recipe-editor__row--step"
+                  className={`recipe-editor__row recipe-editor__row--step${
+                    draggedStepIndex === index ? " is-dragging" : ""
+                  }`}
                   key={index}
+                  onDragOver={(event) => event.preventDefault()}
+                  onDrop={() => {
+                    if (
+                      draggedStepIndex === null ||
+                      draggedStepIndex === index
+                    ) {
+                      return;
+                    }
+                    setSteps((current) => {
+                      const next = [...current];
+                      const [moved] = next.splice(draggedStepIndex, 1);
+                      if (moved !== undefined) next.splice(index, 0, moved);
+                      return next;
+                    });
+                    setDraggedStepIndex(null);
+                  }}
                 >
+                  <span
+                    className="recipe-editor__step-drag"
+                    draggable
+                    aria-label={`Stap ${index + 1} verslepen`}
+                    title="Stap verslepen"
+                    onDragStart={() => setDraggedStepIndex(index)}
+                    onDragEnd={() => setDraggedStepIndex(null)}
+                  >
+                    <GripVertical size={17} aria-hidden="true" />
+                  </span>
                   <span className="recipe-editor__step-number">
                     {index + 1}
                   </span>

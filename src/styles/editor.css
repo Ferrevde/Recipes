@@ -143,7 +143,24 @@
 }
 
 .recipe-editor__row--step {
-  grid-template-columns: auto 1fr auto;
+  grid-template-columns: auto auto 1fr auto;
+}
+
+.recipe-editor__step-drag {
+  align-items: center;
+  color: var(--color-text-subtle);
+  cursor: grab;
+  display: flex;
+  justify-content: center;
+  touch-action: none;
+}
+
+.recipe-editor__step-drag:active {
+  cursor: grabbing;
+}
+
+.recipe-editor__row--step.is-dragging {
+  opacity: 0.45;
 }
 
 .recipe-editor__step-number {
@@ -238,7 +255,7 @@
   }
 
   .recipe-editor__row--step {
-    grid-template-columns: auto 1fr auto;
+    grid-template-columns: auto auto 1fr auto;
   }
 }
 
