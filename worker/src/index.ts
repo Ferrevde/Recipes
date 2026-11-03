@@ -26,6 +26,22 @@ interface RecipeRow {
   tags_json: string;
 }
 
+interface WeekMenuRow {
+  menu_json: string;
+}
+
+const WEEKDAYS = new Set([
+  "maandag",
+  "dinsdag",
+  "woensdag",
+  "donderdag",
+  "vrijdag",
+  "zaterdag",
+  "zondag",
+]);
+
+let weekMenuTableReady: Promise<void> | null = null;
+
 const corsHeaders = {
   "Access-Control-Allow-Headers": "Content-Type",
   "Access-Control-Allow-Methods": "GET, POST, PUT, DELETE, OPTIONS",
@@ -186,6 +202,93 @@ async function deleteRecipe(id: string, env: Env): Promise<Response> {
     : json({ error: "Recept niet gevonden." }, 404);
 }
 
+function clientIdFromRequest(request: Request): string | null {
+  const clientId = new URL(request.url).searchParams.get("clientId")?.trim();
+  return clientId && clientId.length <= 100 ? clientId : null;
+}
+
+function validWeekMenu(input: unknown): Record<string, string> | null {
+  if (!input || typeof input !== "object" || Array.isArray(input)) {
+    return null;
+  }
+  const result: Record<string, string> = {};
+  for (const [day, recipeId] of Object.entries(input)) {
+    if (!WEEKDAYS.has(day) || typeof recipeId !== "string") {
+      return null;
+    }
+    if (recipeId.length > 200) {
+      return null;
+    }
+    result[day] = recipeId;
+  }
+  return result;
+}
+
+async function ensureWeekMenuTable(env: Env): Promise<void> {
+  if (!weekMenuTableReady) {
+    weekMenuTableReady = env.DB.prepare(
+      `CREATE TABLE IF NOT EXISTS week_menus (
+        client_id TEXT PRIMARY KEY NOT NULL,
+        menu_json TEXT NOT NULL DEFAULT '{}',
+        updated_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
+      )`,
+    )
+      .run()
+      .then(() => undefined);
+  }
+  await weekMenuTableReady;
+}
+
+async function getWeekMenu(request: Request, env: Env): Promise<Response> {
+  const clientId = clientIdFromRequest(request);
+  if (!clientId) {
+    return json({ error: "Een geldige client-id is vereist." }, 400);
+  }
+  await ensureWeekMenuTable(env);
+  const row = await env.DB.prepare(
+    "SELECT menu_json FROM week_menus WHERE client_id = ?",
+  )
+    .bind(clientId)
+    .first<WeekMenuRow>();
+  if (!row) {
+    return json({});
+  }
+  try {
+    const menu = validWeekMenu(JSON.parse(row.menu_json) as unknown);
+    return menu ? json(menu) : json({});
+  } catch {
+    return json({});
+  }
+}
+
+async function saveWeekMenu(request: Request, env: Env): Promise<Response> {
+  const clientId = clientIdFromRequest(request);
+  if (!clientId) {
+    return json({ error: "Een geldige client-id is vereist." }, 400);
+  }
+  let body: unknown;
+  try {
+    body = await request.json();
+  } catch {
+    return json({ error: "De aanvraag moet geldige JSON bevatten." }, 400);
+  }
+  const menu = validWeekMenu(body);
+  if (!menu) {
+    return json({ error: "Het weekmenu is ongeldig." }, 400);
+  }
+  await ensureWeekMenuTable(env);
+  await env.DB.prepare(
+    `INSERT INTO week_menus (client_id, menu_json, updated_at)
+     VALUES (?, ?, CURRENT_TIMESTAMP)
+     ON CONFLICT(client_id) DO UPDATE SET
+       menu_json = excluded.menu_json,
+       updated_at = CURRENT_TIMESTAMP`,
+  )
+    .bind(clientId, JSON.stringify(menu))
+    .run();
+  return json(menu);
+}
+
 async function createRecipe(request: Request, env: Env): Promise<Response> {
   let body: unknown;
   try {
@@ -245,6 +348,12 @@ export default {
       }
       if (path === "/api/import-image" && request.method === "POST") {
         return await importRecipeImage(request, env);
+      }
+      if (path === "/api/week-menu" && request.method === "GET") {
+        return await getWeekMenu(request, env);
+      }
+      if (path === "/api/week-menu" && request.method === "PUT") {
+        return await saveWeekMenu(request, env);
       }
       if (path === "/api/recipes" && request.method === "GET") {
         return await listRecipes(env);

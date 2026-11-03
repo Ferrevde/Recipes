@@ -5,6 +5,15 @@ import { recipeCatalog } from "./recipeCatalog";
 const API_BASE = (import.meta.env.VITE_API_BASE_URL ?? "").replace(/\/$/, "");
 const LEGACY_STORAGE_KEY = "recipes.customRecipes";
 export type RecipeInput = Omit<Recipe, "id">;
+export type Weekday =
+  | "maandag"
+  | "dinsdag"
+  | "woensdag"
+  | "donderdag"
+  | "vrijdag"
+  | "zaterdag"
+  | "zondag";
+export type WeekMenu = Partial<Record<Weekday, string>>;
 
 function remoteUrl(path: string): string {
   return `${API_BASE}${path}`;
@@ -142,7 +151,56 @@ export const recipesApi = {
       throw new Error(`De receptenservice gaf ${response.status}.`);
     }
   },
+
+  async getWeekMenu(clientId: string): Promise<WeekMenu> {
+    const response = await fetch(
+      remoteUrl(`/api/week-menu?clientId=${encodeURIComponent(clientId)}`),
+    );
+    if (!response.ok) {
+      throw new Error(
+        `Het weekmenu kon niet worden geladen (${response.status}).`,
+      );
+    }
+    const body: unknown = await response.json();
+    return isWeekMenu(body) ? body : {};
+  },
+
+  async saveWeekMenu(clientId: string, menu: WeekMenu): Promise<WeekMenu> {
+    const response = await fetch(
+      remoteUrl(`/api/week-menu?clientId=${encodeURIComponent(clientId)}`),
+      {
+        body: JSON.stringify(menu),
+        headers: { "Content-Type": "application/json" },
+        method: "PUT",
+      },
+    );
+    if (!response.ok) {
+      throw new Error(
+        `Het weekmenu kon niet worden opgeslagen (${response.status}).`,
+      );
+    }
+    const body: unknown = await response.json();
+    return isWeekMenu(body) ? body : menu;
+  },
 };
+
+function isWeekMenu(input: unknown): input is WeekMenu {
+  if (!input || typeof input !== "object" || Array.isArray(input)) {
+    return false;
+  }
+  return Object.entries(input).every(
+    ([day, recipeId]) =>
+      [
+        "maandag",
+        "dinsdag",
+        "woensdag",
+        "donderdag",
+        "vrijdag",
+        "zaterdag",
+        "zondag",
+      ].includes(day) && typeof recipeId === "string",
+  );
+}
 
 async function migrateLegacyRecipes(): Promise<void> {
   const raw = window.localStorage.getItem(LEGACY_STORAGE_KEY);

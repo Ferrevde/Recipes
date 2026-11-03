@@ -3,7 +3,11 @@ import { useEffect, useMemo, useState } from "react";
 import type { Recipe } from "../../shared/recipe";
 import { recipeCategoryLabel } from "../../shared/recipe";
 import { PageHeader } from "../components/PageHeader";
-import { recipesApi } from "../features/recipes/recipeApi";
+import {
+  recipesApi,
+  type Weekday,
+  type WeekMenu,
+} from "../features/recipes/recipeApi";
 import { formatTotalTime } from "../features/recipes/recipeFormatters";
 import { useLocalStorage } from "../lib/localStorage";
 
@@ -17,10 +21,12 @@ const WEEKDAYS = [
   "zondag",
 ] as const;
 
-type Weekday = (typeof WEEKDAYS)[number];
-type WeekMenu = Partial<Record<Weekday, string>>;
-
 const WEEK_MENU_KEY = "recipes.weekMenu";
+const CLIENT_ID_KEY = "recipes.clientId";
+
+function createClientId(): string {
+  return crypto.randomUUID();
+}
 
 export function WeekMenuPage() {
   const [recipes, setRecipes] = useState<Recipe[] | null>(null);
@@ -28,6 +34,8 @@ export function WeekMenuPage() {
   const [query, setQuery] = useState("");
   const [activeDay, setActiveDay] = useState<Weekday>("maandag");
   const [weekMenu, setWeekMenu] = useLocalStorage<WeekMenu>(WEEK_MENU_KEY, {});
+  const [clientId] = useLocalStorage(CLIENT_ID_KEY, createClientId());
+  const [menuLoaded, setMenuLoaded] = useState(false);
 
   useEffect(() => {
     void recipesApi
@@ -37,6 +45,39 @@ export function WeekMenuPage() {
         setError(reason instanceof Error ? reason.message : "Laden mislukt."),
       );
   }, []);
+
+  useEffect(() => {
+    if (menuLoaded) {
+      return;
+    }
+    void recipesApi
+      .getWeekMenu(clientId)
+      .then((remoteMenu) => {
+        if (
+          Object.keys(remoteMenu).length > 0 ||
+          Object.keys(weekMenu).length === 0
+        ) {
+          setWeekMenu(remoteMenu);
+        }
+        setMenuLoaded(true);
+      })
+      .catch(() => {
+        setMenuLoaded(true);
+        setError("Het weekmenu kon niet met Cloudflare worden verbonden.");
+      });
+  }, [clientId, menuLoaded, setWeekMenu, weekMenu]);
+
+  useEffect(() => {
+    if (!menuLoaded) {
+      return;
+    }
+    const timeout = window.setTimeout(() => {
+      void recipesApi.saveWeekMenu(clientId, weekMenu).catch(() => {
+        setError("Het weekmenu kon niet worden opgeslagen in Cloudflare.");
+      });
+    }, 300);
+    return () => window.clearTimeout(timeout);
+  }, [clientId, menuLoaded, weekMenu]);
 
   const recipesById = useMemo(
     () => new Map((recipes ?? []).map((recipe) => [recipe.id, recipe])),
