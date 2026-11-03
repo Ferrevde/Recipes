@@ -345,6 +345,126 @@
   font-size: var(--text-lg);
 }
 
+.recipe-section__head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-3);
+  margin-bottom: var(--space-3);
+}
+
+.recipe-section__head h2 {
+  margin-bottom: 0;
+}
+
+.recipe-section__hint {
+  margin: 0 0 var(--space-3);
+  color: var(--color-text-muted);
+  font-size: var(--text-sm);
+}
+
+.servings-picker {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-3);
+}
+
+.servings-stepper {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-1);
+  padding: 0.2rem;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-pill);
+  background: var(--color-surface);
+}
+
+.servings-stepper__button {
+  display: grid;
+  width: 1.9rem;
+  height: 1.9rem;
+  place-items: center;
+  border: 0;
+  border-radius: 50%;
+  background: transparent;
+  color: var(--color-accent);
+  cursor: pointer;
+  transition: background var(--transition-fast);
+}
+
+.servings-stepper__button:hover:not(:disabled) {
+  background: var(--color-accent-soft);
+}
+
+.servings-stepper__button:disabled {
+  color: var(--color-text-subtle);
+  cursor: not-allowed;
+}
+
+.servings-stepper__value {
+  min-width: 6.5rem;
+  text-align: center;
+  font-size: var(--text-sm);
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+}
+
+.servings-presets {
+  display: inline-flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+.servings-preset {
+  min-width: 2.1rem;
+  min-height: 1.9rem;
+  padding: 0 var(--space-2);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-pill);
+  background: transparent;
+  color: var(--color-text-muted);
+  font-size: var(--text-sm);
+  font-weight: 700;
+  cursor: pointer;
+  transition:
+    background var(--transition-fast),
+    border-color var(--transition-fast),
+    color var(--transition-fast);
+}
+
+.servings-preset:hover {
+  border-color: var(--color-border-strong);
+  color: var(--color-text);
+}
+
+.servings-preset.is-active {
+  border-color: rgba(169, 87, 56, 0.28);
+  background: var(--color-accent-soft);
+  color: var(--color-accent);
+}
+
+.servings-reset {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-1);
+  min-height: 1.9rem;
+  padding: 0 var(--space-3);
+  border: 1px dashed var(--color-border-strong);
+  border-radius: var(--radius-pill);
+  background: transparent;
+  color: var(--color-text-muted);
+  font-size: var(--text-xs);
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.servings-reset:hover {
+  color: var(--color-text);
+}
+
 .recipe-ingredients {
   list-style: none;
   margin: 0;

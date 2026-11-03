@@ -2,7 +2,10 @@ import {
   ArrowLeft,
   Bookmark,
   Clock,
+  Minus,
   Pencil,
+  Plus,
+  RotateCcw,
   Trash2,
   Users,
 } from "lucide-react";
@@ -17,9 +20,14 @@ import { formatIngredientAmount } from "../features/recipes/ingredientCatalog";
 import { recipesApi } from "../features/recipes/recipeApi";
 import {
   formatDuration,
-  formatServings,
   formatTimeParts,
 } from "../features/recipes/recipeFormatters";
+import {
+  factorForServings,
+  scaleAmount,
+  servingPresets,
+  servingsLabel,
+} from "../features/recipes/servings";
 import { useLocalStorage } from "../lib/localStorage";
 
 export function RecipeDetailPage() {
@@ -35,11 +43,19 @@ export function RecipeDetailPage() {
   const [checkedIngredients, setCheckedIngredients] = useState<Set<number>>(
     new Set(),
   );
+  const [servingsOverride, setServingsOverride] = useState<{
+    recipeId: string;
+    value: number;
+  } | null>(null);
 
   useEffect(() => {
     void recipesApi
       .byId(recipeId ?? "")
-      .then(setRecipe)
+      .then((loaded) => {
+        setRecipe(loaded);
+        setCheckedIngredients(new Set());
+        setServingsOverride(null);
+      })
       .catch((reason: unknown) =>
         setError(reason instanceof Error ? reason.message : "Laden mislukt."),
       );
@@ -54,6 +70,25 @@ export function RecipeDetailPage() {
       .then((stored) => setCanManage(stored !== null))
       .catch(() => setCanManage(false));
   }, [recipe]);
+
+  const servings = recipe
+    ? Math.min(
+        Math.max(
+          servingsOverride && servingsOverride.recipeId === recipe.id
+            ? servingsOverride.value
+            : recipe.servings,
+          1,
+        ),
+        24,
+      )
+    : 0;
+
+  function setServings(value: number) {
+    if (!recipe) {
+      return;
+    }
+    setServingsOverride({ recipeId: recipe.id, value });
+  }
 
   async function deleteCurrentRecipe() {
     if (!recipe || !window.confirm(`“${recipe.title}” verwijderen?`)) {
@@ -81,6 +116,10 @@ export function RecipeDetailPage() {
       }
       return next;
     });
+  }
+
+  function changeServings(delta: number) {
+    setServings(servings + delta);
   }
 
   return (
@@ -194,14 +233,83 @@ export function RecipeDetailPage() {
               <Users aria-hidden="true" size={16} strokeWidth={2} />
               <div>
                 <dt>Porties</dt>
-                <dd>{formatServings(recipe.servings)}</dd>
+                <dd>{servingsLabel(servings)}</dd>
               </div>
             </div>
           </dl>
 
           <div className="recipe-detail__body">
             <section className="recipe-section">
-              <h2>Ingrediënten</h2>
+              <div className="recipe-section__head">
+                <h2>Ingrediënten</h2>
+                <div className="servings-picker">
+                  <div
+                    className="servings-stepper"
+                    role="group"
+                    aria-label="Aantal personen"
+                  >
+                    <button
+                      type="button"
+                      className="servings-stepper__button"
+                      aria-label="Minder personen"
+                      disabled={servings <= 1}
+                      onClick={() => changeServings(-1)}
+                    >
+                      <Minus size={16} aria-hidden="true" />
+                    </button>
+                    <span
+                      className="servings-stepper__value"
+                      aria-live="polite"
+                    >
+                      {servingsLabel(servings)}
+                    </span>
+                    <button
+                      type="button"
+                      className="servings-stepper__button"
+                      aria-label="Meer personen"
+                      disabled={servings >= 24}
+                      onClick={() => changeServings(1)}
+                    >
+                      <Plus size={16} aria-hidden="true" />
+                    </button>
+                  </div>
+                  <div className="servings-presets">
+                    {servingPresets.map((preset) => (
+                      <button
+                        key={preset}
+                        type="button"
+                        className={
+                          servings === preset
+                            ? "servings-preset is-active"
+                            : "servings-preset"
+                        }
+                        aria-pressed={servings === preset}
+                        onClick={() => setServings(preset)}
+                      >
+                        {preset}
+                      </button>
+                    ))}
+                    {servings !== recipe.servings && (
+                      <button
+                        type="button"
+                        className="servings-reset"
+                        onClick={() => setServings(recipe.servings)}
+                      >
+                        <RotateCcw size={14} aria-hidden="true" />
+                        Herstel
+                      </button>
+                    )}
+                  </div>
+                </div>
+              </div>
+
+              {servings !== recipe.servings && (
+                <p className="recipe-section__hint">
+                  Hoeveelheden aangepast van {servingsLabel(recipe.servings)}
+                  naar {servingsLabel(servings)}.
+                </p>
+              )}
+
               <ul className="recipe-ingredients">
                 {recipe.ingredients.map((ingredient, index) => (
                   <li
@@ -228,7 +336,10 @@ export function RecipeDetailPage() {
                     </button>
                     <span className="recipe-ingredient__text">
                       {formatIngredientAmount(
-                        ingredient.amount,
+                        scaleAmount(
+                          ingredient.amount,
+                          factorForServings(servings, recipe.servings),
+                        ),
                         ingredient.unit,
                         ingredient.title,
                       )}
