@@ -213,7 +213,7 @@
 }
 
 .recipe-category-chip.is-active {
-  border-color: rgba(184, 243, 61, 0.2);
+  border-color: rgba(169, 87, 56, 0.2);
   background: var(--color-accent-soft);
   color: var(--color-accent);
 }
@@ -529,7 +529,7 @@
   border-left: 3px solid var(--color-accent);
   border-radius: var(--radius-lg);
   background:
-    linear-gradient(145deg, rgba(184, 243, 61, 0.08), transparent 60%),
+    linear-gradient(145deg, rgba(169, 87, 56, 0.08), transparent 60%),
     var(--color-bg-elevated);
   box-shadow: var(--shadow-card);
 }
@@ -539,7 +539,7 @@
   width: 3.5rem;
   height: 3.5rem;
   place-items: center;
-  border: 1px solid rgba(184, 243, 61, 0.26);
+  border: 1px solid rgba(169, 87, 56, 0.26);
   border-radius: var(--radius-md);
   background: var(--color-accent-soft);
   color: var(--color-accent);
@@ -562,7 +562,7 @@
   align-items: center;
   gap: var(--space-2);
   padding: 0.5rem var(--space-4);
-  border: 1px solid rgba(184, 243, 61, 0.3);
+  border: 1px solid rgba(169, 87, 56, 0.3);
   border-radius: var(--radius-pill);
   background: var(--color-accent-soft);
   color: var(--color-accent);
@@ -572,7 +572,7 @@
 
 .hero__link:hover {
   background: var(--color-accent);
-  color: #111708;
+  color: #fffaf0;
 }
 
 /* Shared helper styles */
