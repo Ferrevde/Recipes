@@ -61,7 +61,9 @@ export function AppShell() {
   const location = useLocation();
   const navigate = useNavigate();
   const hideAddButton =
-    location.pathname === "/profile" || location.pathname === "/saved";
+    location.pathname === "/profile" ||
+    location.pathname === "/saved" ||
+    location.pathname === "/weekmenu";
 
   return (
     <div className="app-shell">

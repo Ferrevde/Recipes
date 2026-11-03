@@ -1,0 +1,201 @@
+.weekmenu-page {
+  display: grid;
+  gap: var(--space-8);
+}
+
+.weekmenu-overview {
+  display: grid;
+  grid-template-columns: repeat(7, minmax(0, 1fr));
+  gap: var(--space-2);
+}
+
+.weekmenu-day {
+  display: grid;
+  min-height: 6.5rem;
+  align-content: start;
+  gap: var(--space-2);
+  padding: var(--space-3);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  background: var(--color-bg-elevated);
+  color: var(--color-text);
+  text-align: left;
+  cursor: pointer;
+  transition:
+    border-color var(--transition-fast),
+    background var(--transition-fast),
+    transform var(--transition-fast);
+}
+
+.weekmenu-day:hover {
+  border-color: var(--color-border-strong);
+  background: var(--color-surface-hover);
+  transform: translateY(-1px);
+}
+
+.weekmenu-day.is-active {
+  border-color: var(--color-accent);
+  background: var(--color-accent-soft);
+}
+
+.weekmenu-day__name {
+  color: var(--color-accent);
+  font-size: var(--text-xs);
+  font-weight: 800;
+  text-transform: capitalize;
+}
+
+.weekmenu-day__recipe {
+  display: -webkit-box;
+  overflow: hidden;
+  color: var(--color-text-muted);
+  font-size: var(--text-sm);
+  line-height: 1.35;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 3;
+}
+
+.weekmenu-current {
+  display: flex;
+  align-items: end;
+  justify-content: space-between;
+  gap: var(--space-4);
+  padding-bottom: var(--space-4);
+  border-bottom: 1px solid var(--color-border);
+}
+
+.weekmenu-current .eyebrow {
+  margin-bottom: var(--space-2);
+}
+
+.weekmenu-current h2 {
+  margin: 0;
+  text-transform: capitalize;
+}
+
+.weekmenu-clear,
+.weekmenu-recipe__button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-2);
+  min-height: 2.5rem;
+  padding: 0 var(--space-4);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-pill);
+  background: var(--color-surface);
+  color: var(--color-text-muted);
+  font-size: var(--text-sm);
+  font-weight: 750;
+  cursor: pointer;
+  transition:
+    border-color var(--transition-fast),
+    background var(--transition-fast),
+    color var(--transition-fast);
+}
+
+.weekmenu-clear:hover,
+.weekmenu-recipe__button:hover {
+  border-color: var(--color-accent);
+  color: var(--color-accent);
+}
+
+.weekmenu-picker {
+  display: grid;
+  gap: var(--space-5);
+}
+
+.weekmenu-picker__header {
+  display: flex;
+  align-items: end;
+  justify-content: space-between;
+  gap: var(--space-5);
+}
+
+.weekmenu-picker__header h2 {
+  margin-bottom: var(--space-1);
+}
+
+.weekmenu-picker__header p {
+  margin: 0;
+  color: var(--color-text-muted);
+  font-size: var(--text-sm);
+}
+
+.weekmenu-search {
+  width: min(100%, 20rem);
+}
+
+.weekmenu-recipes {
+  display: grid;
+  gap: var(--space-3);
+}
+
+.weekmenu-recipe {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-4);
+  padding: var(--space-4);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  background: var(--color-bg-elevated);
+  box-shadow: var(--shadow-card);
+}
+
+.weekmenu-recipe.is-selected {
+  border-color: var(--color-accent);
+  background: var(--color-accent-soft);
+}
+
+.weekmenu-recipe__details {
+  min-width: 0;
+}
+
+.weekmenu-recipe__details h3 {
+  margin: var(--space-2) 0 var(--space-1);
+  font-size: var(--text-lg);
+}
+
+.weekmenu-recipe__details p {
+  margin: 0;
+  color: var(--color-text-muted);
+  font-size: var(--text-sm);
+}
+
+.weekmenu-recipe.is-selected .weekmenu-recipe__button {
+  border-color: var(--color-accent);
+  background: var(--color-accent);
+  color: #fffaf0;
+}
+
+@media (max-width: 900px) {
+  .weekmenu-overview {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 600px) {
+  .weekmenu-overview {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .weekmenu-current,
+  .weekmenu-picker__header,
+  .weekmenu-recipe {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .weekmenu-picker__header {
+    display: flex;
+  }
+
+  .weekmenu-search {
+    width: 100%;
+  }
+
+  .weekmenu-recipe__button {
+    width: 100%;
+  }
+}

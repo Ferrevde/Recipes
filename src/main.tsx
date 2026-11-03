@@ -5,6 +5,7 @@ import App from "./App";
 import "./styles/global.css";
 import "./styles/components.css";
 import "./styles/recipes.css";
+import "./styles/weekmenu.css";
 import "./styles/editor.css";
 
 createRoot(document.getElementById("root")!).render(

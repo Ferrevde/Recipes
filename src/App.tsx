@@ -6,6 +6,7 @@ import { RecipeDetailPage } from "./pages/RecipeDetailPage";
 import { RecipeEditorPage } from "./pages/RecipeEditorPage";
 import { RecipesPage } from "./pages/RecipesPage";
 import { SavedPage } from "./pages/SavedPage";
+import { WeekMenuPage } from "./pages/WeekMenuPage";
 
 function App() {
   return (
@@ -17,6 +18,7 @@ function App() {
         <Route path="recipes/:recipeId/edit" element={<RecipeEditorPage />} />
         <Route path="recipes/:recipeId" element={<RecipeDetailPage />} />
         <Route path="saved" element={<SavedPage />} />
+        <Route path="weekmenu" element={<WeekMenuPage />} />
         <Route path="profile" element={<ProfilePage />} />
         <Route path="*" element={<NotFoundPage />} />
       </Route>
