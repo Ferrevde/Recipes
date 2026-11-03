@@ -40,9 +40,6 @@ export function RecipeDetailPage() {
   const [recipe, setRecipe] = useState<Recipe | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [canManage, setCanManage] = useState(false);
-  const [checkedIngredients, setCheckedIngredients] = useState<Set<number>>(
-    new Set(),
-  );
   const [servingsOverride, setServingsOverride] = useState<{
     recipeId: string;
     value: number;
@@ -53,7 +50,6 @@ export function RecipeDetailPage() {
       .byId(recipeId ?? "")
       .then((loaded) => {
         setRecipe(loaded);
-        setCheckedIngredients(new Set());
         setServingsOverride(null);
       })
       .catch((reason: unknown) =>
@@ -104,18 +100,6 @@ export function RecipeDetailPage() {
           : "Het recept kon niet worden verwijderd.",
       );
     }
-  }
-
-  function toggleIngredient(index: number) {
-    setCheckedIngredients((current) => {
-      const next = new Set(current);
-      if (next.has(index)) {
-        next.delete(index);
-      } else {
-        next.add(index);
-      }
-      return next;
-    });
   }
 
   function changeServings(delta: number) {
@@ -305,35 +289,15 @@ export function RecipeDetailPage() {
 
               {servings !== recipe.servings && (
                 <p className="recipe-section__hint">
-                  Hoeveelheden aangepast van {servingsLabel(recipe.servings)}
-                  naar {servingsLabel(servings)}.
+                  {`Hoeveelheden aangepast van ${servingsLabel(
+                    recipe.servings,
+                  )} naar ${servingsLabel(servings)}.`}
                 </p>
               )}
 
               <ul className="recipe-ingredients">
                 {recipe.ingredients.map((ingredient, index) => (
-                  <li
-                    key={index}
-                    className={`recipe-ingredient${
-                      checkedIngredients.has(index) ? " is-checked" : ""
-                    }`}
-                  >
-                    <button
-                      type="button"
-                      className="recipe-ingredient__check"
-                      aria-label={`Markeer ${ingredient.title} als gebruikt`}
-                      aria-pressed={checkedIngredients.has(index)}
-                      onClick={() => toggleIngredient(index)}
-                    >
-                      <span
-                        aria-hidden="true"
-                        style={{
-                          backgroundColor: checkedIngredients.has(index)
-                            ? "var(--recipe-color)"
-                            : "var(--color-border-strong)",
-                        }}
-                      />
-                    </button>
+                  <li key={index} className="recipe-ingredient">
                     <span className="recipe-ingredient__text">
                       {formatIngredientAmount(
                         scaleAmount(

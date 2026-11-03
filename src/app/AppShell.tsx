@@ -68,13 +68,6 @@ export function AppShell() {
       <aside className="sidebar">
         <Brand />
         <Navigation variant="sidebar" />
-        <div className="sidebar__status">
-          <span className="status-dot" aria-hidden="true" />
-          <div>
-            <strong>Jouw receptenverzameling</strong>
-            <span>Klaar om te koken. Voeg altijd je eigen recepten toe.</span>
-          </div>
-        </div>
         <ProfileLink />
       </aside>
 

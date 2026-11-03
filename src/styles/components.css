@@ -90,41 +90,6 @@
   color: var(--color-accent);
 }
 
-.sidebar__status {
-  display: flex;
-  gap: var(--space-3);
-  padding: var(--space-4);
-  border: 1px solid var(--color-border);
-  border-radius: var(--radius-md);
-  background: var(--color-bg-elevated);
-}
-
-.sidebar__status strong,
-.sidebar__status span {
-  display: block;
-}
-
-.sidebar__status strong {
-  margin-bottom: var(--space-1);
-  font-size: var(--text-xs);
-}
-
-.sidebar__status span {
-  color: var(--color-text-subtle);
-  font-size: 0.68rem;
-  line-height: 1.45;
-}
-
-.status-dot {
-  width: 0.5rem;
-  height: 0.5rem;
-  flex: 0 0 auto;
-  margin-top: 0.2rem;
-  border-radius: 50%;
-  background: var(--color-accent);
-  box-shadow: 0 0 0 5px var(--color-accent-soft);
-}
-
 .app-shell__content {
   min-height: 100vh;
   margin-left: var(--sidebar-width);
