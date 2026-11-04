@@ -10,6 +10,7 @@ import {
   type RecipeDifficulty,
   type RecipeIngredient,
 } from "../../shared/recipe";
+import { PdfBulkImport } from "../components/PdfBulkImport";
 import { ingredientSuggestions } from "../features/recipes/ingredientCatalog";
 import { recipesApi, type RecipeInput } from "../features/recipes/recipeApi";
 import { PageHeader } from "../components/PageHeader";
@@ -209,6 +210,8 @@ export function RecipeEditorPage() {
             : "Sla een recept op in je gedeelde receptenverzameling."
         }
       />
+
+      {!isEditing && <PdfBulkImport />}
 
       {isLoading && <p className="loading-state">Recept laden…</p>}
       {!isLoading && (

@@ -9,6 +9,7 @@ import "./styles/recipes.css";
 import "./styles/weekmenu.css";
 import "./styles/editor.css";
 import "./styles/auth.css";
+import "./styles/pdf-import.css";
 
 createRoot(document.getElementById("root")!).render(
   <StrictMode>

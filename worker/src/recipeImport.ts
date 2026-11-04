@@ -71,6 +71,59 @@ export async function importRecipeFromUrl(
   return input;
 }
 
+export async function importRecipeFromPdf(
+  pdf: File,
+  apiKey: string | undefined,
+): Promise<RecipeInput> {
+  if (pdf.type !== "application/pdf") {
+    throw new Error("Upload een geldig PDF-bestand.");
+  }
+  if (pdf.size > 12 * 1024 * 1024) {
+    throw new Error("Een PDF mag maximaal 12 MB groot zijn.");
+  }
+  if (!apiKey) {
+    throw new Error("Gemini is niet ingesteld op de receptenservice.");
+  }
+
+  const pdfData = toBase64(await pdf.arrayBuffer());
+  let lastError: unknown = null;
+  for (const model of GEMINI_MODEL_FALLBACKS) {
+    try {
+      const body = await requestGeminiModel(
+        apiKey,
+        model,
+        pdf,
+        `Lees alle informatie uit dit recept-PDF-bestand (${pdf.name}) en zet het om naar het gevraagde JSON-formaat. Verwerk precies één recept uit dit bestand.`,
+        pdfData,
+      );
+      const parsed = parseGeminiJson(readGeminiText(body));
+      const recipe = validateRecipe({
+        id: "pdf-preview",
+        ...(parsed as Record<string, unknown>),
+      });
+      if (!recipe) {
+        throw new GeminiError("Het PDF-bestand gaf geen geldig recept terug.");
+      }
+      const { id: _id, ...input } = recipe;
+      return input;
+    } catch (error) {
+      const normalized =
+        error instanceof GeminiError
+          ? error
+          : new GeminiError(
+              error instanceof Error
+                ? error.message
+                : "Gemini gaf een ongeldig antwoord.",
+            );
+      lastError = normalized;
+      if (!shouldTryFallback(normalized)) throw normalized;
+    }
+  }
+  throw lastError instanceof Error
+    ? lastError
+    : new Error("Gemini kon het PDF-bestand niet verwerken.");
+}
+
 export async function importRecipeFromImage(
   image: File,
   apiKey: string | undefined,

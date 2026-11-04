@@ -5,6 +5,12 @@ import { recipeCatalog } from "./recipeCatalog";
 const API_BASE = (import.meta.env.VITE_API_BASE_URL ?? "").replace(/\/$/, "");
 export type RecipeInput = Omit<Recipe, "id">;
 
+export interface PdfImportResult {
+  filename: string;
+  recipe?: RecipeInput;
+  error?: string;
+}
+
 export interface AuthUser {
   id: string;
   email: string;
@@ -242,6 +248,68 @@ export const recipesApi = {
 
   async storedById(id: string): Promise<Recipe | null> {
     return storedRecipe(id);
+  },
+
+  async importFromPdfs(files: File[]): Promise<PdfImportResult[]> {
+    const form = new FormData();
+    for (const file of files) {
+      form.append("files", file);
+    }
+    const response = await fetch(remoteUrl("/api/admin/import-pdfs"), {
+      body: form,
+      credentials: "include",
+      method: "POST",
+    });
+    if (!response.ok) {
+      throw await apiError(
+        response,
+        "De PDF-bestanden konden niet worden geïmporteerd.",
+      );
+    }
+    const body: unknown = await response.json();
+    if (!body || typeof body !== "object" || !("results" in body)) {
+      throw new Error("De PDF-import gaf een ongeldige reactie.");
+    }
+    const results = (body as { results?: unknown }).results;
+    if (!Array.isArray(results)) {
+      throw new Error("De PDF-import gaf geen resultaten terug.");
+    }
+    return results.map((result): PdfImportResult => {
+      if (!result || typeof result !== "object") {
+        return { error: "Ongeldig resultaat.", filename: "Onbekend bestand" };
+      }
+      const value = result as {
+        filename?: unknown;
+        error?: unknown;
+        recipe?: unknown;
+      };
+      let recipe: RecipeInput | undefined;
+      if (value.recipe && typeof value.recipe === "object") {
+        const validated = validateRecipe({
+          id: "pdf-preview",
+          ...value.recipe,
+        });
+        if (validated) {
+          const { id: _id, ...input } = validated;
+          recipe = input;
+        }
+      }
+      const output: PdfImportResult = {
+        filename:
+          typeof value.filename === "string"
+            ? value.filename
+            : "Onbekend bestand",
+      };
+      if (recipe) {
+        output.recipe = recipe;
+      }
+      if (typeof value.error === "string") {
+        output.error = value.error;
+      } else if (!recipe) {
+        output.error = "Geen geldig recept gevonden.";
+      }
+      return output;
+    });
   },
 
   async importFromUrl(url: string): Promise<RecipeInput> {

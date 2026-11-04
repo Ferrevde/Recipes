@@ -1,5 +1,9 @@
 import type { Recipe } from "../../shared/recipe";
-import { importRecipeFromImage, importRecipeFromUrl } from "./recipeImport";
+import {
+  importRecipeFromImage,
+  importRecipeFromPdf,
+  importRecipeFromUrl,
+} from "./recipeImport";
 import {
   recipeCategories,
   recipeDifficulties,
@@ -144,6 +148,55 @@ async function importRecipeImage(
       422,
     );
   }
+}
+
+async function importRecipePdfs(request: Request, env: Env): Promise<Response> {
+  let form: FormData;
+  try {
+    form = await request.formData();
+  } catch {
+    return json({ error: "Het PDF-formulier is ongeldig." }, 400);
+  }
+  const files = form
+    .getAll("files")
+    .filter((value): value is File => value instanceof File);
+  if (files.length === 0) {
+    return json({ error: "Kies minstens één PDF-bestand." }, 400);
+  }
+  if (files.length > 20) {
+    return json(
+      { error: "Je kunt maximaal 20 PDF-bestanden tegelijk importeren." },
+      400,
+    );
+  }
+  const totalSize = files.reduce((total, file) => total + file.size, 0);
+  if (totalSize > 80 * 1024 * 1024) {
+    return json(
+      { error: "De totale upload mag maximaal 80 MB groot zijn." },
+      400,
+    );
+  }
+
+  const results: Array<{
+    filename: string;
+    recipe?: Omit<Recipe, "id">;
+    error?: string;
+  }> = [];
+  for (const file of files) {
+    try {
+      results.push({
+        filename: file.name,
+        recipe: await importRecipeFromPdf(file, env.GEMINI_API_KEY?.trim()),
+      });
+    } catch (error) {
+      results.push({
+        error:
+          error instanceof Error ? error.message : "PDF importeren mislukt.",
+        filename: file.name,
+      });
+    }
+  }
+  return json({ results });
 }
 
 async function listRecipes(env: Env): Promise<Response> {
@@ -783,6 +836,9 @@ export default {
         return (
           adminRequired(request) ?? (await importRecipeImage(request, env))
         );
+      }
+      if (path === "/api/admin/import-pdfs" && request.method === "POST") {
+        return adminRequired(request) ?? (await importRecipePdfs(request, env));
       }
       if (path === "/api/import" && request.method === "POST") {
         return adminRequired(request) ?? (await importRecipe(request, env));
