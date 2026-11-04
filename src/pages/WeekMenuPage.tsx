@@ -11,6 +11,10 @@ import {
   type WeekMenu,
 } from "../features/recipes/recipeApi";
 import { formatTotalTime } from "../features/recipes/recipeFormatters";
+import {
+  createShoppingList,
+  shoppingItemLabel,
+} from "../features/recipes/shoppingList";
 import { useAuth } from "../features/auth/AuthContext";
 import { useLocalStorage } from "../lib/localStorage";
 
@@ -103,6 +107,18 @@ export function WeekMenuPage() {
   const recipesById = useMemo(
     () => new Map((recipes ?? []).map((recipe) => [recipe.id, recipe])),
     [recipes],
+  );
+
+  const selectedRecipes = useMemo(
+    () =>
+      Object.values(weekMenu)
+        .map((recipeId) => (recipeId ? recipesById.get(recipeId) : undefined))
+        .filter((recipe): recipe is Recipe => recipe !== undefined),
+    [recipesById, weekMenu],
+  );
+  const shoppingList = useMemo(
+    () => createShoppingList(selectedRecipes),
+    [selectedRecipes],
   );
 
   const filteredRecipes = useMemo(() => {
@@ -279,6 +295,31 @@ export function WeekMenuPage() {
               );
             })}
           </div>
+        )}
+      </section>
+
+      <section className="shopping-list" aria-labelledby="shopping-list-title">
+        <div className="shopping-list__header">
+          <div>
+            <p className="eyebrow">Automatisch samengesteld</p>
+            <h2 id="shopping-list-title">Boodschappenlijstje</h2>
+          </div>
+          <span className="shopping-list__count">
+            {shoppingList.length} producten
+          </span>
+        </div>
+        {shoppingList.length === 0 ? (
+          <p className="shopping-list__empty">
+            Kies recepten voor je weekmenu om je boodschappenlijstje te vullen.
+          </p>
+        ) : (
+          <ul className="shopping-list__items">
+            {shoppingList.map((item) => (
+              <li key={`${item.title}-${item.unit}`}>
+                {shoppingItemLabel(item)}
+              </li>
+            ))}
+          </ul>
         )}
       </section>
     </div>
