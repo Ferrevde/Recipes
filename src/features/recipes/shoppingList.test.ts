@@ -36,6 +36,14 @@ describe("createShoppingList", () => {
     expect(shoppingItemLabel(list[0]!)).toBe("2 eieren");
   });
 
+  it("voegt geen automatisch en toe aan onbekende ingrediënten", () => {
+    const list = createShoppingList([
+      recipe([{ amount: "2", title: "kipfilet", unit: "" }]),
+    ]);
+
+    expect(shoppingItemLabel(list[0]!)).toBe("2 kipfilet");
+  });
+
   it("behoudt niet-numerieke hoeveelheden", () => {
     const list = createShoppingList([
       recipe([{ amount: "naar smaak", title: "zout", unit: "" }]),

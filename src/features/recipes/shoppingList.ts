@@ -1,5 +1,5 @@
 import type { Recipe } from "../../../shared/recipe";
-import { formatIngredientAmount } from "./ingredientCatalog";
+import { commonIngredients } from "./ingredientCatalog";
 
 export interface ShoppingItem {
   title: string;
@@ -108,5 +108,12 @@ export function createShoppingList(recipes: Recipe[]): ShoppingItem[] {
 }
 
 export function shoppingItemLabel(item: ShoppingItem): string {
-  return formatIngredientAmount(item.amount, item.unit, item.title);
+  const numericAmount = Number.parseFloat(item.amount.replace(",", "."));
+  const normalizedTitle = item.title.trim().toLocaleLowerCase("nl");
+  const knownIngredient = commonIngredients.find(
+    (ingredient) => ingredient.name === normalizedTitle,
+  );
+  const title =
+    numericAmount > 1 && knownIngredient ? knownIngredient.plural : item.title;
+  return [item.amount, item.unit, title].filter(Boolean).join(" ");
 }
