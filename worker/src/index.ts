@@ -276,7 +276,7 @@ function normalizedEmail(value: unknown): string | null {
     return null;
   }
   const email = value.trim().toLocaleLowerCase("en-US");
-  return /^[^\\s@]+@[^\\s@]+\\.[^\\s@]+$/.test(email) && email.length <= 254
+  return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email) && email.length <= 254
     ? email
     : null;
 }
