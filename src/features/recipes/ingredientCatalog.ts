@@ -46,14 +46,16 @@ export const commonIngredients: CommonIngredient[] = [
   { name: "spinazie", plural: "spinazie" },
   { name: "spaghetti", plural: "spaghetti" },
   { name: "tomaat", plural: "tomaten" },
-  { name: "tonijn", plural: "tonijnen" },
+  { name: "tonijn", plural: "tonijn" },
   { name: "vanille-ijs", plural: "vanille-ijs" },
   { name: "varkensvlees", plural: "varkensvlees" },
   { name: "vis", plural: "vissen" },
   { name: "walnoot", plural: "walnoten" },
-  { name: "zalm", plural: "zalmen" },
+  { name: "zalm", plural: "zalm" },
   { name: "zout", plural: "zout" },
   { name: "zwarte peper", plural: "zwarte peper" },
+  { name: "kerstomaat", plural: "kerstomaten" },
+  { name: "rucola", plural: "rucola" },
 
   // Groenten en aardse ingrediënten
   { name: "artisjok", plural: "artisjokken" },
@@ -111,7 +113,7 @@ export const commonIngredients: CommonIngredient[] = [
 
   // Vlees, gevogelte en vleesvervangers
   { name: "biefstuk", plural: "biefstukken" },
-  { name: "dunne lende", plural: "dunne lendes" },
+  { name: "dunne lende", plural: "dunne lende" },
   { name: "entrecote", plural: "entrecotes" },
   { name: "filet mignon", plural: "filet mignons" },
   { name: "gehaktbal", plural: "gehaktballen" },
@@ -144,7 +146,7 @@ export const commonIngredients: CommonIngredient[] = [
   { name: "ansjovis", plural: "ansjovis" },
   { name: "forel", plural: "forellen" },
   { name: "heilbot", plural: "heilbotten" },
-  { name: "kabeljauw", plural: "kabeljauwen" },
+  { name: "kabeljauw", plural: "kabeljauw" },
   { name: "krab", plural: "krabben" },
   { name: "mossel", plural: "mosselen" },
   { name: "oester", plural: "oesters" },
@@ -293,21 +295,13 @@ export function pluralizeIngredient(title: string, amount: string): string {
   const known = commonIngredients.find(
     (ingredient) => ingredient.name === normalized,
   );
-  if (known?.plural === base || /(?:en|s)$/i.test(base)) {
+  if (
+    !known ||
+    known.plural.toLocaleLowerCase("nl") === base.toLocaleLowerCase("nl")
+  ) {
     return title;
   }
-  const plural = known?.plural ?? heuristicPlural(base);
-  return `${plural}${suffix}`;
-}
-
-function heuristicPlural(word: string): string {
-  if (/(s|x|z|ch|sh)$/i.test(word)) {
-    return `${word}en`;
-  }
-  if (/(a|o|u|i|y)$/i.test(word)) {
-    return `${word}'s`;
-  }
-  return `${word}en`;
+  return `${known.plural}${suffix}`;
 }
 
 export function formatIngredientAmount(

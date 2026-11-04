@@ -26,5 +26,13 @@ describe("ingredientCatalog", () => {
 
   it("behoudt massawoorden", () => {
     expect(pluralizeIngredient("olijfolie", "2 el")).toBe("olijfolie");
+    expect(pluralizeIngredient("rucola", "2 handjes")).toBe("rucola");
+    expect(pluralizeIngredient("tonijn", "2 blikjes")).toBe("tonijn");
+  });
+
+  it("gebruikt Nederlandse uitzonderingen", () => {
+    expect(pluralizeIngredient("kerstomaat", "2 stuks")).toBe("kerstomaten");
+    expect(pluralizeIngredient("dunne lende", "2 stuks")).toBe("dunne lende");
+    expect(pluralizeIngredient("kalkoenfilet", "2 stuks")).toBe("kalkoenfilet");
   });
 });
