@@ -1,5 +1,6 @@
 import { FileUp } from "lucide-react";
 import { useState } from "react";
+import { canonicalizeIngredientTitle } from "../features/recipes/ingredientCatalog";
 import {
   recipesApi,
   type PdfImportResult,
@@ -27,8 +28,15 @@ export function PdfBulkImport() {
           continue;
         }
         try {
-          await recipesApi.create(result.recipe);
-          saved.push(result);
+          const normalizedRecipe = {
+            ...result.recipe,
+            ingredients: result.recipe.ingredients.map((ingredient) => ({
+              ...ingredient,
+              title: canonicalizeIngredientTitle(ingredient.title),
+            })),
+          };
+          await recipesApi.create(normalizedRecipe);
+          saved.push({ ...result, recipe: normalizedRecipe });
         } catch (reason) {
           saved.push({
             ...result,

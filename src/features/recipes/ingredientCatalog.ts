@@ -495,6 +495,109 @@ export const commonIngredients: CommonIngredient[] = [
   { name: "naanbrood", plural: "naanbroden" },
 ];
 
+const ingredientAliases: Record<string, string> = {
+  "beef fillet": "biefstuk",
+  "bell pepper": "paprika",
+  "cherry tomato": "cherrytomaat",
+  "chicken breast": "kipfilet",
+  "chicken thigh": "kippendij",
+  "chicken thighs": "kippendij",
+  chicken: "kip",
+  "chocolate chips": "chocolade",
+  "coconut milk": "kokosmelk",
+  "cream cheese": "roomkaas",
+  "dried tomato": "zongedroogde tomaat",
+  "garlic clove": "knoflookteen",
+  garlic: "knoflook",
+  "grated cheese": "geraspte kaas",
+  "grated mozzarella": "geraspte mozzarella",
+  "green beans": "sperzieboon",
+  "ground beef": "rundergehakt",
+  "heavy cream": "slagroom",
+  "olive oil": "olijfolie",
+  onion: "ui",
+  parmesan: "parmezaanse kaas",
+  "parmesan cheese": "parmezaanse kaas",
+  "red onion": "rode ui",
+  "spring onion": "lente-ui",
+  "sun dried tomato": "zongedroogde tomaat",
+  "tomato paste": "tomatenpuree",
+  tomato: "tomaat",
+  "vegetable stock": "groentebouillon",
+  "white wine": "witte wijn",
+};
+
+function normalizedIngredient(value: string): string {
+  return value
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .toLocaleLowerCase("nl")
+    .replace(/[’']/g, "")
+    .replace(/[^\p{L}\p{N}]+/gu, " ")
+    .trim();
+}
+
+function editDistance(left: string, right: string): number {
+  const distances = Array.from(
+    { length: right.length + 1 },
+    (_, index) => index,
+  );
+  for (let leftIndex = 1; leftIndex <= left.length; leftIndex += 1) {
+    let diagonal = distances[0] ?? 0;
+    distances[0] = leftIndex;
+    for (let rightIndex = 1; rightIndex <= right.length; rightIndex += 1) {
+      const previous = distances[rightIndex] ?? 0;
+      distances[rightIndex] = Math.min(
+        (distances[rightIndex - 1] ?? 0) + 1,
+        previous + 1,
+        diagonal + (left[leftIndex - 1] === right[rightIndex - 1] ? 0 : 1),
+      );
+      diagonal = previous;
+    }
+  }
+  return distances[right.length] ?? 0;
+}
+
+function ingredientSimilarity(left: string, right: string): number {
+  if (left === right) return 1;
+  if (left.includes(right) || right.includes(left)) return 0.86;
+  const distance = editDistance(left, right);
+  return 1 - distance / Math.max(left.length, right.length, 1);
+}
+
+/**
+ * Converts an imported ingredient title to the closest known catalog title.
+ * A conservative threshold keeps genuinely new/manual ingredients intact.
+ */
+export function canonicalizeIngredientTitle(title: string): string {
+  const commaIndex = title.indexOf(",");
+  const base = (commaIndex >= 0 ? title.slice(0, commaIndex) : title).trim();
+  const suffix = commaIndex >= 0 ? title.slice(commaIndex) : "";
+  const normalized = normalizedIngredient(base);
+  if (!normalized) return title;
+
+  const alias = ingredientAliases[normalized];
+  if (alias) return `${alias}${suffix}`;
+
+  let best: { name: string; score: number } | null = null;
+  for (const ingredient of commonIngredients) {
+    const name = normalizedIngredient(ingredient.name);
+    const plural = normalizedIngredient(ingredient.plural);
+    const score =
+      normalized === name || normalized === plural
+        ? 1
+        : Math.max(
+            ingredientSimilarity(normalized, name),
+            ingredientSimilarity(normalized, plural),
+          );
+    if (!best || score > best.score) {
+      best = { name: ingredient.name, score };
+    }
+  }
+
+  return best && best.score >= 0.78 ? `${best.name}${suffix}` : title;
+}
+
 export function ingredientSuggestions(query: string): CommonIngredient[] {
   const normalized = query.trim().toLocaleLowerCase("nl");
   if (!normalized) {

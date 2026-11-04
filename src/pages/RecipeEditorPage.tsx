@@ -11,7 +11,10 @@ import {
   type RecipeIngredient,
 } from "../../shared/recipe";
 import { PdfBulkImport } from "../components/PdfBulkImport";
-import { ingredientSuggestions } from "../features/recipes/ingredientCatalog";
+import {
+  canonicalizeIngredientTitle,
+  ingredientSuggestions,
+} from "../features/recipes/ingredientCatalog";
 import { recipesApi, type RecipeInput } from "../features/recipes/recipeApi";
 import { PageHeader } from "../components/PageHeader";
 
@@ -66,7 +69,7 @@ export function RecipeEditorPage() {
       recipe.ingredients.map((ingredient, key) => ({
         amount: [ingredient.amount, ingredient.unit].filter(Boolean).join(" "),
         key,
-        title: ingredient.title,
+        title: canonicalizeIngredientTitle(ingredient.title),
         unit: "",
       })),
     );
