@@ -38,10 +38,10 @@ describe("createShoppingList", () => {
 
   it("voegt geen automatisch en toe aan onbekende ingrediënten", () => {
     const list = createShoppingList([
-      recipe([{ amount: "2", title: "kalkoenfilet", unit: "" }]),
+      recipe([{ amount: "2", title: "fazantfilet", unit: "" }]),
     ]);
 
-    expect(shoppingItemLabel(list[0]!)).toBe("2 kalkoenfilet");
+    expect(shoppingItemLabel(list[0]!)).toBe("2 fazantfilet");
   });
 
   it("behoudt niet-numerieke hoeveelheden", () => {

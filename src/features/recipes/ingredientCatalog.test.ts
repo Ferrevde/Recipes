@@ -10,6 +10,12 @@ describe("ingredientCatalog", () => {
     expect(ingredientSuggestions("toma").map((item) => item.name)).toContain(
       "tomaat",
     );
+    expect(ingredientSuggestions("pen").map((item) => item.name)).toContain(
+      "penne",
+    );
+    expect(
+      ingredientSuggestions("geraspte kaas").map((item) => item.name),
+    ).toContain("geraspte kaas");
   });
 
   it("gebruikt het enkelvoud voor één stuk", () => {
@@ -33,6 +39,6 @@ describe("ingredientCatalog", () => {
   it("gebruikt Nederlandse uitzonderingen", () => {
     expect(pluralizeIngredient("kerstomaat", "2 stuks")).toBe("kerstomaten");
     expect(pluralizeIngredient("dunne lende", "2 stuks")).toBe("dunne lende");
-    expect(pluralizeIngredient("kalkoenfilet", "2 stuks")).toBe("kalkoenfilet");
+    expect(pluralizeIngredient("fazantfilet", "2 stuks")).toBe("fazantfilet");
   });
 });
