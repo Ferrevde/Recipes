@@ -776,6 +776,14 @@ export default {
       if (path === "/api/account/week-menu" && request.method === "PUT") {
         return await saveAccountWeekMenu(request, env);
       }
+      if (path === "/api/admin/import" && request.method === "POST") {
+        return adminRequired(request) ?? (await importRecipe(request, env));
+      }
+      if (path === "/api/admin/import-image" && request.method === "POST") {
+        return (
+          adminRequired(request) ?? (await importRecipeImage(request, env))
+        );
+      }
       if (path === "/api/import" && request.method === "POST") {
         return adminRequired(request) ?? (await importRecipe(request, env));
       }

@@ -245,7 +245,7 @@ export const recipesApi = {
   },
 
   async importFromUrl(url: string): Promise<RecipeInput> {
-    const response = await fetch(remoteUrl("/api/import"), {
+    const response = await fetch(remoteUrl("/api/admin/import"), {
       body: JSON.stringify({ url }),
       credentials: "include",
       headers: { "Content-Type": "application/json" },
@@ -273,7 +273,7 @@ export const recipesApi = {
   async importFromImage(image: File): Promise<RecipeInput> {
     const form = new FormData();
     form.set("image", image);
-    const response = await fetch(remoteUrl("/api/import-image"), {
+    const response = await fetch(remoteUrl("/api/admin/import-image"), {
       body: form,
       credentials: "include",
       method: "POST",
