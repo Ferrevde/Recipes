@@ -3,15 +3,14 @@ import { useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import type { Recipe, RecipeCategory } from "../../shared/recipe";
 import { recipeCategories, recipeCategoryLabels } from "../../shared/recipe";
-import { recipesApi } from "../features/recipes/recipeApi";
+import { useAuth } from "../features/auth/AuthContext";
+import { accountApi, recipesApi } from "../features/recipes/recipeApi";
 import { RecipeCard } from "../features/recipes/RecipeCard";
 import { PageHeader } from "../components/PageHeader";
-import { useLocalStorage } from "../lib/localStorage";
-
-const FAVORITES_KEY = "recipes.savedIds";
 
 export function RecipesPage() {
   const navigate = useNavigate();
+  const { user } = useAuth();
   const [recipes, setRecipes] = useState<Recipe[] | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [query, setQuery] = useState("");
@@ -24,10 +23,46 @@ export function RecipesPage() {
         : "all";
     },
   );
-  const [savedIds, setSavedIds] = useLocalStorage(
-    FAVORITES_KEY,
-    [] as string[],
-  );
+  const [savedIds, setSavedIds] = useState<string[]>([]);
+
+  useEffect(() => {
+    if (!user) {
+      setSavedIds([]);
+      return;
+    }
+    void accountApi
+      .favorites()
+      .then((remoteIds) => {
+        const raw = window.localStorage.getItem("recipes.savedIds");
+        let legacyIds: string[] = [];
+        try {
+          const parsed: unknown = raw ? JSON.parse(raw) : null;
+          legacyIds = Array.isArray(parsed)
+            ? parsed.filter((id): id is string => typeof id === "string")
+            : [];
+        } catch {
+          legacyIds = [];
+        }
+        const next =
+          remoteIds.length === 0 && legacyIds.length > 0
+            ? [...new Set(legacyIds)]
+            : remoteIds;
+        setSavedIds(next);
+        if (next.length > 0 && remoteIds.length === 0) {
+          void accountApi.saveFavorites(next);
+        }
+        if (raw) {
+          window.localStorage.removeItem("recipes.savedIds");
+        }
+      })
+      .catch((reason: unknown) =>
+        setError(
+          reason instanceof Error
+            ? reason.message
+            : "Favorieten laden mislukt.",
+        ),
+      );
+  }, [user]);
 
   useEffect(() => {
     void recipesApi
@@ -39,11 +74,23 @@ export function RecipesPage() {
   }, []);
 
   function toggleFavorite(id: string) {
-    setSavedIds((current) =>
-      current.includes(id)
-        ? current.filter((stored) => stored !== id)
-        : [...current, id],
-    );
+    if (!user) {
+      navigate(`/login?returnTo=${encodeURIComponent("/recipes")}`);
+      return;
+    }
+    const next = savedIds.includes(id)
+      ? savedIds.filter((stored) => stored !== id)
+      : [...savedIds, id];
+    setSavedIds(next);
+    void accountApi
+      .saveFavorites(next)
+      .catch((reason: unknown) =>
+        setError(
+          reason instanceof Error
+            ? reason.message
+            : "Favoriet kon niet worden opgeslagen.",
+        ),
+      );
   }
 
   const filtered = useMemo(() => {

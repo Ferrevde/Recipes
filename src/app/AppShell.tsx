@@ -63,7 +63,8 @@ export function AppShell() {
   const hideAddButton =
     location.pathname === "/profile" ||
     location.pathname === "/saved" ||
-    location.pathname === "/weekmenu";
+    location.pathname === "/weekmenu" ||
+    location.pathname.startsWith("/admin");
 
   return (
     <div className="app-shell">
@@ -89,7 +90,7 @@ export function AppShell() {
           type="button"
           aria-label="Recept toevoegen"
           title="Recept toevoegen"
-          onClick={() => navigate("/recipes/new")}
+          onClick={() => navigate("/admin/recipes/new")}
         >
           <BookOpen aria-hidden="true" size={22} />
           <span>Toevoegen</span>

@@ -3,8 +3,14 @@ import { validateRecipe } from "../../../shared/recipe";
 import { recipeCatalog } from "./recipeCatalog";
 
 const API_BASE = (import.meta.env.VITE_API_BASE_URL ?? "").replace(/\/$/, "");
-const LEGACY_STORAGE_KEY = "recipes.customRecipes";
 export type RecipeInput = Omit<Recipe, "id">;
+
+export interface AuthUser {
+  id: string;
+  email: string;
+  isAdmin: boolean;
+}
+
 export type Weekday =
   | "maandag"
   | "dinsdag"
@@ -53,10 +59,167 @@ async function storedRecipe(id: string): Promise<Recipe | null> {
   return validateRecipe(await response.json());
 }
 
+async function apiError(response: Response, fallback: string): Promise<Error> {
+  const body: unknown = await response.json().catch(() => null);
+  const message =
+    body && typeof body === "object" && "error" in body
+      ? String(body.error)
+      : fallback;
+  return new Error(message);
+}
+
+function isAuthUser(input: unknown): input is AuthUser {
+  return Boolean(
+    input &&
+    typeof input === "object" &&
+    "id" in input &&
+    typeof input.id === "string" &&
+    "email" in input &&
+    typeof input.email === "string" &&
+    "isAdmin" in input &&
+    typeof input.isAdmin === "boolean",
+  );
+}
+
+function isWeekMenu(input: unknown): input is WeekMenu {
+  if (!input || typeof input !== "object" || Array.isArray(input)) {
+    return false;
+  }
+  return Object.entries(input).every(
+    ([day, recipeId]) =>
+      [
+        "maandag",
+        "dinsdag",
+        "woensdag",
+        "donderdag",
+        "vrijdag",
+        "zaterdag",
+        "zondag",
+      ].includes(day) && typeof recipeId === "string",
+  );
+}
+
+async function authenticate(
+  path: string,
+  email: string,
+  password: string,
+): Promise<AuthUser> {
+  const response = await fetch(remoteUrl(path), {
+    body: JSON.stringify({ email, password }),
+    credentials: "include",
+    headers: { "Content-Type": "application/json" },
+    method: "POST",
+  });
+  if (!response.ok) {
+    throw await apiError(response, "Inloggen mislukt.");
+  }
+  const body: unknown = await response.json();
+  const user =
+    body && typeof body === "object" && "user" in body ? body.user : null;
+  if (!isAuthUser(user)) {
+    throw new Error("De accountservice gaf een ongeldige reactie.");
+  }
+  return user;
+}
+
+export const authApi = {
+  async me(): Promise<AuthUser | null> {
+    const response = await fetch(remoteUrl("/api/auth/me"), {
+      credentials: "include",
+    });
+    if (!response.ok) {
+      throw await apiError(
+        response,
+        "De accountstatus kon niet worden geladen.",
+      );
+    }
+    const body: unknown = await response.json();
+    const user =
+      body && typeof body === "object" && "user" in body ? body.user : null;
+    return isAuthUser(user) ? user : null;
+  },
+  async login(email: string, password: string): Promise<AuthUser> {
+    return authenticate("/api/auth/login", email, password);
+  },
+  async register(email: string, password: string): Promise<AuthUser> {
+    return authenticate("/api/auth/register", email, password);
+  },
+  async logout(): Promise<void> {
+    const response = await fetch(remoteUrl("/api/auth/logout"), {
+      credentials: "include",
+      method: "POST",
+    });
+    if (!response.ok) {
+      throw await apiError(response, "Uitloggen mislukt.");
+    }
+  },
+};
+
+export const accountApi = {
+  async favorites(): Promise<string[]> {
+    const response = await fetch(remoteUrl("/api/account/favorites"), {
+      credentials: "include",
+    });
+    if (!response.ok) {
+      throw await apiError(
+        response,
+        "Log eerst in om favorieten te gebruiken.",
+      );
+    }
+    const body: unknown = await response.json();
+    return Array.isArray(body)
+      ? body.filter((id): id is string => typeof id === "string")
+      : [];
+  },
+  async saveFavorites(ids: string[]): Promise<string[]> {
+    const response = await fetch(remoteUrl("/api/account/favorites"), {
+      body: JSON.stringify(ids),
+      credentials: "include",
+      headers: { "Content-Type": "application/json" },
+      method: "PUT",
+    });
+    if (!response.ok) {
+      throw await apiError(
+        response,
+        "Favorieten konden niet worden opgeslagen.",
+      );
+    }
+    return (await response.json()) as string[];
+  },
+  async weekMenu(): Promise<WeekMenu> {
+    const response = await fetch(remoteUrl("/api/account/week-menu"), {
+      credentials: "include",
+    });
+    if (!response.ok) {
+      throw await apiError(
+        response,
+        "Log eerst in om een weekmenu te gebruiken.",
+      );
+    }
+    const body: unknown = await response.json();
+    return isWeekMenu(body) ? body : {};
+  },
+  async saveWeekMenu(menu: WeekMenu): Promise<WeekMenu> {
+    const response = await fetch(remoteUrl("/api/account/week-menu"), {
+      body: JSON.stringify(menu),
+      credentials: "include",
+      headers: { "Content-Type": "application/json" },
+      method: "PUT",
+    });
+    if (!response.ok) {
+      throw await apiError(
+        response,
+        "Het weekmenu kon niet worden opgeslagen.",
+      );
+    }
+    const body: unknown = await response.json();
+    return isWeekMenu(body) ? body : menu;
+  },
+};
+
 export const recipesApi = {
   async list(): Promise<Recipe[]> {
     try {
-      await migrateLegacyRecipes();
       return mergeRecipes(
         await readRecipeResponse(await fetch(remoteUrl("/api/recipes"))),
       );
@@ -84,6 +247,7 @@ export const recipesApi = {
   async importFromUrl(url: string): Promise<RecipeInput> {
     const response = await fetch(remoteUrl("/api/import"), {
       body: JSON.stringify({ url }),
+      credentials: "include",
       headers: { "Content-Type": "application/json" },
       method: "POST",
     });
@@ -111,6 +275,7 @@ export const recipesApi = {
     form.set("image", image);
     const response = await fetch(remoteUrl("/api/import-image"), {
       body: form,
+      credentials: "include",
       method: "POST",
     });
     if (!response.ok) {
@@ -133,17 +298,22 @@ export const recipesApi = {
   },
 
   async create(input: RecipeInput): Promise<Recipe> {
-    return sendRecipe("POST", "/api/recipes", input);
+    return sendRecipe("POST", "/api/admin/recipes", input);
   },
 
   async update(id: string, input: RecipeInput): Promise<Recipe> {
-    return sendRecipe("PUT", `/api/recipes/${encodeURIComponent(id)}`, input);
+    return sendRecipe(
+      "PUT",
+      `/api/admin/recipes/${encodeURIComponent(id)}`,
+      input,
+    );
   },
 
   async remove(id: string): Promise<void> {
     const response = await fetch(
-      remoteUrl(`/api/recipes/${encodeURIComponent(id)}`),
+      remoteUrl(`/api/admin/recipes/${encodeURIComponent(id)}`),
       {
+        credentials: "include",
         method: "DELETE",
       },
     );
@@ -151,81 +321,7 @@ export const recipesApi = {
       throw new Error(`De receptenservice gaf ${response.status}.`);
     }
   },
-
-  async getWeekMenu(clientId: string): Promise<WeekMenu> {
-    const response = await fetch(
-      remoteUrl(`/api/week-menu?clientId=${encodeURIComponent(clientId)}`),
-    );
-    if (!response.ok) {
-      throw new Error(
-        `Het weekmenu kon niet worden geladen (${response.status}).`,
-      );
-    }
-    const body: unknown = await response.json();
-    return isWeekMenu(body) ? body : {};
-  },
-
-  async saveWeekMenu(clientId: string, menu: WeekMenu): Promise<WeekMenu> {
-    const response = await fetch(
-      remoteUrl(`/api/week-menu?clientId=${encodeURIComponent(clientId)}`),
-      {
-        body: JSON.stringify(menu),
-        headers: { "Content-Type": "application/json" },
-        method: "PUT",
-      },
-    );
-    if (!response.ok) {
-      throw new Error(
-        `Het weekmenu kon niet worden opgeslagen (${response.status}).`,
-      );
-    }
-    const body: unknown = await response.json();
-    return isWeekMenu(body) ? body : menu;
-  },
 };
-
-function isWeekMenu(input: unknown): input is WeekMenu {
-  if (!input || typeof input !== "object" || Array.isArray(input)) {
-    return false;
-  }
-  return Object.entries(input).every(
-    ([day, recipeId]) =>
-      [
-        "maandag",
-        "dinsdag",
-        "woensdag",
-        "donderdag",
-        "vrijdag",
-        "zaterdag",
-        "zondag",
-      ].includes(day) && typeof recipeId === "string",
-  );
-}
-
-async function migrateLegacyRecipes(): Promise<void> {
-  const raw = window.localStorage.getItem(LEGACY_STORAGE_KEY);
-  if (!raw) return;
-  let legacyRecipes: Recipe[];
-  try {
-    const parsed: unknown = JSON.parse(raw);
-    legacyRecipes = Array.isArray(parsed)
-      ? parsed
-          .map(validateRecipe)
-          .filter((recipe): recipe is Recipe => recipe !== null)
-      : [];
-  } catch {
-    return;
-  }
-  if (legacyRecipes.length === 0) {
-    window.localStorage.removeItem(LEGACY_STORAGE_KEY);
-    return;
-  }
-  for (const recipe of legacyRecipes) {
-    const { id: _id, ...input } = recipe;
-    await sendRecipe("POST", "/api/recipes", input);
-  }
-  window.localStorage.removeItem(LEGACY_STORAGE_KEY);
-}
 
 async function sendRecipe(
   method: "POST" | "PUT",
@@ -234,6 +330,7 @@ async function sendRecipe(
 ): Promise<Recipe> {
   const response = await fetch(remoteUrl(path), {
     body: JSON.stringify(input),
+    credentials: "include",
     headers: { "Content-Type": "application/json" },
     method,
   });

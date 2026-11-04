@@ -1,14 +1,17 @@
 import { CalendarDays, Check, Search, X } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
+import { Link, useNavigate } from "react-router-dom";
 import type { Recipe } from "../../shared/recipe";
 import { recipeCategoryLabel } from "../../shared/recipe";
 import { PageHeader } from "../components/PageHeader";
 import {
+  accountApi,
   recipesApi,
   type Weekday,
   type WeekMenu,
 } from "../features/recipes/recipeApi";
 import { formatTotalTime } from "../features/recipes/recipeFormatters";
+import { useAuth } from "../features/auth/AuthContext";
 import { useLocalStorage } from "../lib/localStorage";
 
 const WEEKDAYS = [
@@ -21,20 +24,20 @@ const WEEKDAYS = [
   "zondag",
 ] as const;
 
-const WEEK_MENU_KEY = "recipes.weekMenu";
-const CLIENT_ID_KEY = "recipes.clientId";
-
-function createClientId(): string {
-  return crypto.randomUUID();
-}
+const LEGACY_WEEK_MENU_KEY = "recipes.weekMenu";
 
 export function WeekMenuPage() {
+  const navigate = useNavigate();
+  const { user } = useAuth();
   const [recipes, setRecipes] = useState<Recipe[] | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [query, setQuery] = useState("");
   const [activeDay, setActiveDay] = useState<Weekday>("maandag");
-  const [weekMenu, setWeekMenu] = useLocalStorage<WeekMenu>(WEEK_MENU_KEY, {});
-  const [clientId] = useLocalStorage(CLIENT_ID_KEY, createClientId());
+  const [weekMenu, setWeekMenu] = useState<WeekMenu>({});
+  const [legacyMenu, setLegacyMenu] = useLocalStorage<WeekMenu>(
+    LEGACY_WEEK_MENU_KEY,
+    {},
+  );
   const [menuLoaded, setMenuLoaded] = useState(false);
 
   useEffect(() => {
@@ -47,37 +50,55 @@ export function WeekMenuPage() {
   }, []);
 
   useEffect(() => {
+    setMenuLoaded(false);
+  }, [user]);
+
+  useEffect(() => {
     if (menuLoaded) {
       return;
     }
-    void recipesApi
-      .getWeekMenu(clientId)
+    if (!user) {
+      setWeekMenu({});
+      setMenuLoaded(true);
+      return;
+    }
+    setMenuLoaded(false);
+    void accountApi
+      .weekMenu()
       .then((remoteMenu) => {
         if (
           Object.keys(remoteMenu).length > 0 ||
-          Object.keys(weekMenu).length === 0
+          Object.keys(legacyMenu).length === 0
         ) {
           setWeekMenu(remoteMenu);
+        } else {
+          setWeekMenu(legacyMenu);
+          void accountApi.saveWeekMenu(legacyMenu);
         }
         setMenuLoaded(true);
+        setLegacyMenu({});
       })
-      .catch(() => {
+      .catch((reason: unknown) => {
         setMenuLoaded(true);
-        setError("Het weekmenu kon niet met Cloudflare worden verbonden.");
+        setError(
+          reason instanceof Error
+            ? reason.message
+            : "Log eerst in om een weekmenu te gebruiken.",
+        );
       });
-  }, [clientId, menuLoaded, setWeekMenu, weekMenu]);
+  }, [legacyMenu, menuLoaded, setLegacyMenu, user]);
 
   useEffect(() => {
-    if (!menuLoaded) {
+    if (!menuLoaded || !user) {
       return;
     }
     const timeout = window.setTimeout(() => {
-      void recipesApi.saveWeekMenu(clientId, weekMenu).catch(() => {
-        setError("Het weekmenu kon niet worden opgeslagen in Cloudflare.");
+      void accountApi.saveWeekMenu(weekMenu).catch(() => {
+        setError("Het weekmenu kon niet worden opgeslagen.");
       });
     }, 300);
     return () => window.clearTimeout(timeout);
-  }, [clientId, menuLoaded, weekMenu]);
+  }, [menuLoaded, user, weekMenu]);
 
   const recipesById = useMemo(
     () => new Map((recipes ?? []).map((recipe) => [recipe.id, recipe])),
@@ -104,6 +125,10 @@ export function WeekMenuPage() {
   }, [query, recipes]);
 
   function chooseRecipe(recipeId: string) {
+    if (!user) {
+      navigate(`/login?returnTo=${encodeURIComponent("/weekmenu")}`);
+      return;
+    }
     setWeekMenu((current) => ({ ...current, [activeDay]: recipeId }));
   }
 
@@ -115,6 +140,10 @@ export function WeekMenuPage() {
     });
   }
 
+  function clearWeekMenu() {
+    setWeekMenu({});
+  }
+
   return (
     <div className="weekmenu-page">
       <PageHeader
@@ -124,6 +153,14 @@ export function WeekMenuPage() {
       />
 
       {error && <p className="alert alert--error">{error}</p>}
+      {!user && (
+        <p className="alert">
+          Log in om je persoonlijke weekmenu op te slaan.{" "}
+          <Link className="inline-action" to="/login?returnTo=/weekmenu">
+            Inloggen
+          </Link>
+        </p>
+      )}
 
       <section className="weekmenu-overview" aria-label="Weekmenu overzicht">
         {WEEKDAYS.map((day) => {
@@ -151,16 +188,27 @@ export function WeekMenuPage() {
           <p className="eyebrow">Geselecteerde dag</p>
           <h2>{activeDay}</h2>
         </div>
-        {weekMenu[activeDay] && (
-          <button
-            type="button"
-            className="weekmenu-clear"
-            onClick={() => removeRecipe(activeDay)}
-          >
-            <X size={16} aria-hidden="true" />
-            Verwijder recept
-          </button>
-        )}
+        <div className="weekmenu-current__actions">
+          {weekMenu[activeDay] && (
+            <button
+              type="button"
+              className="weekmenu-clear"
+              onClick={() => removeRecipe(activeDay)}
+            >
+              <X size={16} aria-hidden="true" />
+              Verwijder recept
+            </button>
+          )}
+          {Object.keys(weekMenu).length > 0 && (
+            <button
+              type="button"
+              className="weekmenu-clear weekmenu-clear--all"
+              onClick={clearWeekMenu}
+            >
+              Leeg heel weekmenu
+            </button>
+          )}
+        </div>
       </section>
 
       <section className="weekmenu-picker">

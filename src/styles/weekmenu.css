@@ -73,6 +73,13 @@
   text-transform: capitalize;
 }
 
+.weekmenu-current__actions {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: end;
+  gap: var(--space-2);
+}
+
 .weekmenu-clear,
 .weekmenu-recipe__button {
   display: inline-flex;
@@ -92,6 +99,11 @@
     border-color var(--transition-fast),
     background var(--transition-fast),
     color var(--transition-fast);
+}
+
+.weekmenu-clear--all {
+  border-color: rgba(179, 72, 63, 0.4);
+  color: #8f3d35;
 }
 
 .weekmenu-clear:hover,

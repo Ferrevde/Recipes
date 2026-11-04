@@ -1,10 +1,11 @@
 import { Bookmark, ChefHat, UtensilsCrossed } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
+import { Link } from "react-router-dom";
 import type { Recipe, RecipeCategory } from "../../shared/recipe";
 import { recipeCategoryLabel } from "../../shared/recipe";
 import { PageHeader } from "../components/PageHeader";
-import { recipesApi } from "../features/recipes/recipeApi";
-import { useLocalStorage } from "../lib/localStorage";
+import { useAuth } from "../features/auth/AuthContext";
+import { accountApi, recipesApi } from "../features/recipes/recipeApi";
 
 interface PreferenceRow {
   label: string;
@@ -32,9 +33,21 @@ function favouriteCategory(recipes: Recipe[]): string {
 }
 
 export function ProfilePage() {
-  const [savedIds] = useLocalStorage("recipes.savedIds", [] as string[]);
+  const { user, logout } = useAuth();
+  const [savedIds, setSavedIds] = useState<string[]>([]);
   const [recipes, setRecipes] = useState<Recipe[] | null>(null);
   const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (!user) {
+      setSavedIds([]);
+      return;
+    }
+    void accountApi
+      .favorites()
+      .then(setSavedIds)
+      .catch(() => setSavedIds([]));
+  }, [user]);
 
   useEffect(() => {
     void recipesApi
@@ -80,6 +93,31 @@ export function ProfilePage() {
       />
 
       {error && <p className="alert alert--error">{error}</p>}
+
+      <section className="profile-card">
+        <h2>Account</h2>
+        {user ? (
+          <>
+            <p className="profile-card__text">Ingelogd als {user.email}.</p>
+            <button
+              className="secondary-button"
+              type="button"
+              onClick={() => void logout()}
+            >
+              Uitloggen
+            </button>
+          </>
+        ) : (
+          <>
+            <p className="profile-card__text">
+              Log in om je favorieten en weekmenu op te slaan.
+            </p>
+            <Link className="secondary-button" to="/login">
+              Inloggen
+            </Link>
+          </>
+        )}
+      </section>
 
       <section className="profile-card">
         <h2>Snelle statistieken</h2>

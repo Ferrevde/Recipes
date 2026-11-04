@@ -17,7 +17,8 @@ import {
   recipeDifficultyLabel,
 } from "../../shared/recipe";
 import { formatIngredientAmount } from "../features/recipes/ingredientCatalog";
-import { recipesApi } from "../features/recipes/recipeApi";
+import { useAuth } from "../features/auth/AuthContext";
+import { accountApi, recipesApi } from "../features/recipes/recipeApi";
 import {
   formatDuration,
   formatTimeParts,
@@ -28,15 +29,12 @@ import {
   servingPresets,
   servingsLabel,
 } from "../features/recipes/servings";
-import { useLocalStorage } from "../lib/localStorage";
 
 export function RecipeDetailPage() {
   const navigate = useNavigate();
   const { recipeId } = useParams();
-  const [favoriteIds, setFavoriteIds] = useLocalStorage(
-    "recipes.savedIds",
-    [] as string[],
-  );
+  const { user } = useAuth();
+  const [favoriteIds, setFavoriteIds] = useState<string[]>([]);
   const [recipe, setRecipe] = useState<Recipe | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [canManage, setCanManage] = useState(false);
@@ -44,6 +42,17 @@ export function RecipeDetailPage() {
     recipeId: string;
     value: number;
   } | null>(null);
+
+  useEffect(() => {
+    if (!user) {
+      setFavoriteIds([]);
+      return;
+    }
+    void accountApi
+      .favorites()
+      .then(setFavoriteIds)
+      .catch(() => setFavoriteIds([]));
+  }, [user]);
 
   useEffect(() => {
     void recipesApi
@@ -145,7 +154,7 @@ export function RecipeDetailPage() {
                 <>
                   <Link
                     className="recipe-detail__action"
-                    to={`/recipes/${recipe.id}/edit`}
+                    to={`/admin/recipes/${recipe.id}/edit`}
                     aria-label="Recept bewerken"
                   >
                     <Pencil size={18} aria-hidden="true" />
@@ -170,13 +179,19 @@ export function RecipeDetailPage() {
                     : "Bewaar recept"
                 }
                 aria-pressed={favoriteIds.includes(recipe.id)}
-                onClick={() =>
-                  setFavoriteIds((current) =>
-                    current.includes(recipe.id)
-                      ? current.filter((id) => id !== recipe.id)
-                      : [...current, recipe.id],
-                  )
-                }
+                onClick={() => {
+                  if (!user) {
+                    navigate(
+                      `/login?returnTo=${encodeURIComponent(`/recipes/${recipe.id}`)}`,
+                    );
+                    return;
+                  }
+                  const next = favoriteIds.includes(recipe.id)
+                    ? favoriteIds.filter((id) => id !== recipe.id)
+                    : [...favoriteIds, recipe.id];
+                  setFavoriteIds(next);
+                  void accountApi.saveFavorites(next);
+                }}
               >
                 <Bookmark
                   size={20}
