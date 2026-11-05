@@ -1,5 +1,5 @@
-import type { Recipe, RecipeCategory } from "../../shared/recipe";
-import { validateRecipe } from "../../shared/recipe";
+import type { Recipe, RecipeCategory } from "@shared/recipe";
+import { validateRecipe } from "@shared/recipe";
 
 type RecipeInput = Omit<Recipe, "id">;
 

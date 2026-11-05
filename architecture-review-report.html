@@ -1,0 +1,342 @@
+<!DOCTYPE html>
+<html lang="nl">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Architectuur-review – Receptenboek</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js"></script>
+  <style>
+    .candidate-card { transition: transform 0.15s, box-shadow 0.15s; }
+    .candidate-card:hover { transform: translateY(-2px); box-shadow: 0 10px 25px -5px rgb(0 0 0 / 0.15); }
+    .badge-strong { background: #dc2626; }
+    .badge-worth { background: #ea580c; }
+    .badge-spec { background: #6b7280; }
+    .diagram-container { background: white; border-radius: 0.5rem; padding: 1rem; }
+    .toggle-diagram { cursor: pointer; }
+  </style>
+</head>
+<body class="bg-gray-50 font-sans">
+  <div class="max-w-7xl mx-auto px-4 py-8">
+    <header class="mb-10">
+      <h1 class="text-3xl font-bold text-gray-900">Architectuur-review – Receptenboek</h1>
+      <p class="text-gray-600 mt-2">Gegenereerd op <span id="ts"></span></p>
+    </header>
+
+    <section class="mb-10">
+      <h2 class="text-xl font-semibold text-gray-800 mb-4">Samenvatting codebase</h2>
+      <div class="grid gap-4 md:grid-cols-3">
+        <div class="bg-white p-4 rounded-lg shadow"><strong>Frontend</strong>: React + TypeScript + Vite, 28 bestanden in <code>src/</code></div>
+        <div class="bg-white p-4 rounded-lg shadow"><strong>Worker</strong>: Cloudflare Worker (D1 + Assets), 2 bestanden in <code>worker/src/</code></div>
+        <div class="bg-white p-4 rounded-lg shadow"><strong>Shared</strong>: <code>shared/recipe.ts</code> (contract + validator)</div>
+      </div>
+    </section>
+
+    <section class="mb-10">
+      <h2 class="text-xl font-semibold text-gray-800 mb-4">Call-graph (huidige architectuur)</h2>
+      <div class="diagram-container">
+        <pre class="mermaid">
+graph TD
+  subgraph Frontend
+    App[App.tsx]
+    Pages[Pages: Recipes, Saved, WeekMenu, Profile, Editor, Login, Detail]
+    Auth[AuthContext]
+    RecipeApi[recipeApi.ts]
+    AccountApi[accountApi]
+    AuthApi[authApi]
+    ImportPdf[PdfBulkImport]
+    Catalog[ingredientCatalog]
+    Shopping[shoppingList]
+  end
+  subgraph Worker
+    Index[index.ts<br/>900+ regels]
+    RecipeImport[recipeImport.ts]
+    DB[(D1 Database)]
+    Gemini[Gemini API]
+  end
+  App --> Pages
+  App --> Auth
+  Pages --> RecipeApi
+  Pages --> AccountApi
+  Pages --> AuthApi
+  Editor --> ImportPdf
+  Editor --> Catalog
+  WeekMenu --> Shopping
+  RecipeApi --> Worker
+  AccountApi --> Worker
+  AuthApi --> Worker
+  ImportPdf --> Worker
+  Worker --> Index
+  Index --> DB
+  Index --> RecipeImport
+  RecipeImport --> Gemini
+</pre>
+      </div>
+    </section>
+
+    <section class="mb-10">
+      <h2 class="text-xl font-semibold text-gray-800 mb-4">Deepening-kandidaten</h2>
+
+      <!-- Candidate 1 -->
+      <article class="candidate-card bg-white rounded-xl shadow-md p-6 mb-6 border-l-4 border-red-500">
+        <div class="flex items-start justify-between mb-4">
+          <div>
+            <h3 class="text-lg font-semibold text-gray-900">1. Worker <code>index.ts</code> – God-module zonder seams</h3>
+            <span class="badge-strong text-white text-xs px-2 py-0.5 rounded mt-1 inline-block">Strong</span>
+          </div>
+        </div>
+        <div class="grid gap-4 md:grid-cols-2 mb-4">
+          <div>
+            <h4 class="font-medium text-gray-700">Bestanden</h4>
+            <ul class="text-sm text-gray-600 list-disc list-inside mt-1 space-y-1">
+              <li><code>worker/src/index.ts</code> (~900 regels)</li>
+              <li><code>worker/src/recipeImport.ts</code> (~500 regels)</li>
+            </ul>
+          </div>
+          <div>
+            <h4 class="font-medium text-gray-700">Probleem</h4>
+            <p class="text-sm text-gray-600 mt-1">Eén module behandelt <strong>alle</strong> verantwoordelijkheden: recepten-CRUD, auth (register/login/logout/me), account-favorieten/weekmenu, admin-imports (URL, afbeelding, PDF), weekmenu-legacy, migraties, CORS, sessiebeheer, wachtwoord-hashing. Geen duidelijke <strong>interface</strong> of <strong>seams</strong>. De <strong>deletion test</strong>: als je <code>importRecipeFromPdf</code> verwijdert, verdeelt de complexiteit zich niet – hij blijft in één bestand.</p>
+          </div>
+        </div>
+        <div class="grid gap-4 md:grid-cols-2 mb-4">
+          <div>
+            <h4 class="font-medium text-gray-700">Oplossing</h4>
+            <ul class="text-sm text-gray-600 list-disc list-inside mt-1 space-y-1">
+              <li>Splits in modules per <strong>seam</strong>: <code>routes/recipes</code>, <code>routes/auth</code>, <code>routes/account</code>, <code>routes/admin</code></li>
+              <li>Introduceer <code>services/</code> voor DB-toegang, Gemini, sessies</li>
+              <li><code>index.ts</code> wordt thin router die modules composeert</li>
+            </ul>
+          </div>
+          <div>
+            <h4 class="font-medium text-gray-700">Voordelen</h4>
+            <ul class="text-sm text-gray-600 list-disc list-inside mt-1 space-y-1">
+              <li><strong>Locality</strong>: wijzigingen aan auth raken recepten niet</li>
+              <li><strong>Leverage</strong>: nieuwe endpoints volgen hetzelfde patroon</li>
+              <li>Testbaarheid: elke module kan geïsoleerd getest worden</li>
+              <li>AI-navigatie: kleinere bestanden, duidelijke grenzen</li>
+            </ul>
+          </div>
+        </div>
+        <div class="diagram-container">
+          <h4 class="font-medium mb-2">Before / After</h4>
+          <pre class="mermaid">
+graph LR
+  subgraph Before[Before: God-module]
+    I[index.ts]
+    R[recipes]
+    A[auth]
+    Ac[account]
+    Ad[admin]
+    W[weekmenu]
+    M[migraties]
+    S[sessies]
+    P[wachtwoorden]
+    G[Gemini-import]
+  end
+  I --> R & A & Ac & Ad & W & M & S & P & G
+  end
+
+  subgraph After[After: Deep modules met seams]
+    Router[router.ts]
+    Recipes[routes/recipes.ts]
+    Auth[routes/auth.ts]
+    Account[routes/account.ts]
+    Admin[routes/admin.ts]
+    Services[services/]
+    DB[db/recipes, db/users, db/sessions]
+    Gemini[gemini/]
+  end
+  Router --> Recipes & Auth & Account & Admin
+  Recipes --> Services
+  Auth --> Services
+  Account --> Services
+  Admin --> Services
+  Services --> DB & Gemini
+  end
+</pre>
+        </div>
+      </article>
+
+      <!-- Candidate 2 -->
+      <article class="candidate-card bg-white rounded-xl shadow-md p-6 mb-6 border-l-4 border-orange-500">
+        <div class="flex items-start justify-between mb-4">
+          <div>
+            <h3 class="text-lg font-semibold text-gray-900">2. Frontend <code>recipeApi.ts</code> – Shallow façade over meerdere domeinen</h3>
+            <span class="badge-worth text-white text-xs px-2 py-0.5 rounded mt-1 inline-block">Worth exploring</span>
+          </div>
+        </div>
+        <div class="grid gap-4 md:grid-cols-2 mb-4">
+          <div>
+            <h4 class="font-medium text-gray-700">Bestanden</h4>
+            <ul class="text-sm text-gray-600 list-disc list-inside mt-1 space-y-1">
+              <li><code>src/features/recipes/recipeApi.ts</code> (~400 regels)</li>
+            </ul>
+          </div>
+          <div>
+            <h4 class="font-medium text-gray-700">Probleem</h4>
+            <p class="text-sm text-gray-600 mt-1">Één bestand exporteert <code>recipesApi</code>, <code>authApi</code>, <code>accountApi</code>, <code>PdfImportResult</code>, <code>AuthUser</code>, <code>Weekday</code>, <code>WeekMenu</code>. De <strong>interface</strong> is bijna zo complex als de implementatie. Elke wijziging aan auth of account forceert hercompilatie van receptenlogica. Geen <strong>locality</strong>.</p>
+          </div>
+        </div>
+        <div class="grid gap-4 md:grid-cols-2 mb-4">
+          <div>
+            <h4 class="font-medium text-gray-700">Oplossing</h4>
+            <ul class="text-sm text-gray-600 list-disc list-inside mt-1 space-y-1">
+              <li>Split per <strong>seam</strong>: <code>api/recipes.ts</code>, <code>api/auth.ts</code>, <code>api/account.ts</code>, <code>api/admin.ts</code></li>
+              <li>Gedeelde types in <code>api/types.ts</code></li>
+              <li>Eén <code>api/client.ts</code> voor <code>fetch</code>-wrapper met <code>credentials: "include"</code></li>
+            </ul>
+          </div>
+          <div>
+            <h4 class="font-medium text-gray-700">Voordelen</h4>
+            <ul class="text-sm text-gray-600 list-disc list-inside mt-1 space-y-1">
+              <li><strong>Locality</strong>: auth-wijzigingen raken recepten-API niet</li>
+              <li>Tree-shaking: ongebruikte API's vallen weg</li>
+              <li>Duidelijke <strong>interface</strong> per domein</li>
+            </ul>
+          </div>
+        </div>
+        <div class="diagram-container">
+          <h4 class="font-medium mb-2">Before / After</h4>
+          <pre class="mermaid">
+graph LR
+  subgraph Before[Before: Eén shallow façade]
+    RA[recipeApi.ts]
+    recipesApi
+    authApi
+    accountApi
+    types[types...]
+  end
+  RA --> recipesApi & authApi & accountApi & types
+  end
+
+  subgraph After[After: Deep modules per seam]
+    Client[api/client.ts]
+    Recipes[api/recipes.ts]
+    Auth[api/auth.ts]
+    Account[api/account.ts]
+    Admin[api/admin.ts]
+    Types[api/types.ts]
+  end
+  Client --> Recipes & Auth & Account & Admin
+  Recipes -.-> Types
+  Auth -.-> Types
+  Account -.-> Types
+  Admin -.-> Types
+  end
+</pre>
+        </div>
+      </article>
+
+      <!-- Candidate 3 -->
+      <article class="candidate-card bg-white rounded-xl shadow-md p-6 mb-6 border-l-4 border-orange-500">
+        <div class="flex items-start justify-between mb-4">
+          <div>
+            <h3 class="text-lg font-semibold text-gray-900">3. Geen domein-glossary (<code>GLOSSARY.md</code>) en geen ADRs</h3>
+            <span class="badge-worth text-white text-xs px-2 py-0.5 rounded mt-1 inline-block">Worth exploring</span>
+          </div>
+        </div>
+        <div class="grid gap-4 md:grid-cols-2 mb-4">
+          <div>
+            <h4 class="font-medium text-gray-700">Probleem</h4>
+            <p class="text-sm text-gray-600 mt-1">Termen als <strong>Recept</strong>, <strong>Weekmenu</strong>, <strong>Gebruiker</strong>, <strong>Admin</strong>, <strong>Favoriet</strong>, <strong>Ingrediënt</strong>, <strong>Portie</strong> worden door de hele codebase gebruikt maar nergens gedefinieerd. Architectuurbeslissingen (Worker als monolith, D1-schema, Cloudflare Access voor admin, cookie-based sessies, Gemini server-side) zijn nergens vastgelegd. Nieuwe ontwikkelaars (en AI-agents) moeten de terminologie afleiden uit code.</p>
+          </div>
+          <div>
+            <h4 class="font-medium text-gray-700">Oplossing</h4>
+            <ul class="text-sm text-gray-600 list-disc list-inside mt-1 space-y-1">
+              <li>Creëer <code>GLOSSARY.md</code> met definities van kernconcepten</li>
+              <li>Voeg <code>docs/adr/</code> toe voor beslissingen: ADR-001 Worker-monolith, ADR-002 Cookie-sessies, ADR-003 Gemini server-side, ADR-004 Cloudflare Access voor admin, ADR-005 D1-schema versiebeheer</li>
+              <li>Gebruik glossary-termen consequent in code, PR's, issues</li>
+            </ul>
+          </div>
+        </div>
+        <div class="diagram-container">
+          <h4 class="font-medium mb-2">Voorbeeld <code>GLOSSARY.md</code> structuur</h4>
+          <pre class="text-sm bg-gray-100 p-4 rounded">
+# Glossary – Receptenboek
+
+**Recept** – Een kookinstructie met titel, categorie, tijden, porties,
+ingrediënten, stappen, tags, moeilijkheid, samenvatting.
+
+**Weekmenu** – Een mapping van Weekdag → Recept-ID voor één gebruiker.
+Beheerd per account in D1 (<code>user_week_menus</code>).
+
+**Gebruiker** – Een geregistreerd account met e-mail + gehashte wachtwoord.
+Heeft favorieten (<code>user_favorites</code>) en weekmenu.
+
+**Admin** – Een gebruiker met Cloudflare Zero Trust-toegang tot <code>/admin/*</code>
+en <code>/api/admin/*</code>. Beheert recepten-CRUD en imports.
+
+**Portie** – Aantal personen waarvoor een recept bedoeld is.
+Schaalt ingrediëntenhoeveelheden lineair met afronding naar boven.
+</pre>
+        </div>
+      </article>
+
+      <!-- Candidate 4 -->
+      <article class="candidate-card bg-white rounded-xl shadow-md p-6 mb-6 border-l-4 border-gray-500">
+        <div class="flex items-start justify-between mb-4">
+          <div>
+            <h3 class="text-lg font-semibold text-gray-900">4. Validatie en DB-mapping gedupliceerd over worker/frontend grens</h3>
+            <span class="badge-spec text-white text-xs px-2 py-0.5 rounded mt-1 inline-block">Speculative</span>
+          </div>
+        </div>
+        <div class="grid gap-4 md:grid-cols-2 mb-4">
+          <div>
+            <h4 class="font-medium text-gray-700">Probleem</h4>
+            <p class="text-sm text-gray-600 mt-1"><code>validateRecipe</code> leeft in <code>shared/recipe.ts</code> en wordt door beide kanten gebruikt, maar de worker doet handmatig <code>JSON.parse</code> op kolommen (<code>ingredients_json</code>, <code>steps_json</code>, <code>tags_json</code>) en roept daarna <code>validateRecipe</code> aan. Fouten in serialisatie worden pas laat opgevangen. Geen <strong>seam</strong> tussen DB-laag en domeinlaag.</p>
+          </div>
+          <div>
+            <h4 class="font-medium text-gray-700">Oplossing</h4>
+            <ul class="text-sm text-gray-600 list-disc list-inside mt-1 space-y-1">
+              <li>Introduceer <code>db/recipes.ts</code> met <code>RecipeRow</code> ↔ <code>Recipe</code> mappers</li>
+              <li>Centraliseer serialisatie/deserialisatie in één module</li>
+              <li>Valideer direct na DB-lezen, niet in handler</li>
+            </ul>
+          </div>
+        </div>
+      </article>
+
+      <!-- Candidate 5 -->
+      <article class="candidate-card bg-white rounded-xl shadow-md p-6 mb-6 border-l-4 border-gray-500">
+        <div class="flex items-start justify-between mb-4">
+          <div>
+            <h3 class="text-lg font-semibold text-gray-900">5. Auth-state en API-client implicit in <code>credentials: "include"</code></h3>
+            <span class="badge-spec text-white text-xs px-2 py-0.5 rounded mt-1 inline-block">Speculative</span>
+          </div>
+        </div>
+        <div class="grid gap-4 md:grid-cols-2 mb-4">
+          <div>
+            <h4 class="font-medium text-gray-700">Probleem</h4>
+            <p class="text-sm text-gray-600 mt-1">Elke <code>fetch</code> in <code>recipeApi.ts</code> herhaalt <code>credentials: "include"</code>. Geen centrale <strong>adapter</strong> voor sessiebeheer, token-refresh, of afhandeling van 401/403. Testen vereist echte cookies.</p>
+          </div>
+          <div>
+            <h4 class="font-medium text-gray-700">Oplossing</h4>
+            <ul class="text-sm text-gray-600 list-disc list-inside mt-1 space-y-1">
+              <li><code>api/client.ts</code> als <strong>adapter</strong> met interceptors</li>
+              <li>Automatische redirect naar <code>/login</code> bij 401</li>
+              <li>Mockbare client voor tests</li>
+            </ul>
+          </div>
+        </div>
+      </article>
+
+    </section>
+
+    <section class="mb-10">
+      <h2 class="text-xl font-semibold text-gray-800 mb-4">Top-aanbeveling</h2>
+      <div class="bg-blue-50 border-l-4 border-blue-500 p-6 rounded-r-lg">
+        <h3 class="font-semibold text-blue-900 mb-2">Start met Kandidaat 1: Worker <code>index.ts</code> splitsen</h3>
+        <p class="text-blue-800">Dit is de grootste <strong>leverage</strong>-kans. De worker is de enige backend en groeit ongebremd. Elke nieuwe feature (notificaties, export, sharing, etc.) landt nu in dezelfde god-module. Door eerst de <strong>seams</strong> (routes/services) te trekken, wordt elke volgende verbetering (kandidaten 2–5) natuurlijker en veiliger. De <strong>deletion test</strong> bevestigt: verwijdert u <code>importRecipeFromPdf</code> uit <code>index.ts</code>, blijft de rest ongewijzigd – maar de complexiteit verdwijnt niet, hij verhuist slechts. Een diepe module per seam concentreert de complexiteit waar ze hoort.</p>
+      </div>
+    </section>
+
+    <footer class="mt-12 text-center text-sm text-gray-500">
+      <p>Rapport gegenereerd door <code>/improve-codebase-architecture</code> · <a href="https://skills.sh/mattpocock/skills" class="underline hover:text-gray-700" target="_blank">mattpocock/skills</a></p>
+    </footer>
+  </div>
+  <script>
+    document.getElementById('ts').textContent = new Date().toLocaleString('nl-NL');
+    mermaid.initialize({ startOnLoad: true, theme: 'base', securityLevel: 'loose' });
+  </script>
+</body>
+</html>

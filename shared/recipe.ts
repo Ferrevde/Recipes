@@ -30,6 +30,8 @@ export interface Recipe {
   tags: string[];
 }
 
+export type RecipeInput = Omit<Recipe, "id">;
+
 const CATEGORY_LABELS: Record<RecipeCategory, string> = {
   breakfast: "Ontbijt",
   lunch: "Lunch",
